@@ -219,43 +219,14 @@ class HomeScreen extends StatelessWidget {
 // ── Banner carousel ──────────────────────────────────────────────────────────
 
 class _BannerSlide {
-  final List<Color> colors;
-  final String emoji;
-  final String title;
-  final String subtitle;
-  final String cta;
-
-  const _BannerSlide({
-    required this.colors,
-    required this.emoji,
-    required this.title,
-    required this.subtitle,
-    required this.cta,
-  });
+  final String imagePath;
+  const _BannerSlide({required this.imagePath});
 }
 
 const _bannerSlides = [
-  _BannerSlide(
-    colors: [Color(0xFF006D6A), Color(0xFF00B4A8)],
-    emoji: '✈️',
-    title: 'Cari jalan.\nBagikan cerita.',
-    subtitle: 'Temani perjalananmu dengan GohoSIM.',
-    cta: 'Mulai sekarang →',
-  ),
-  _BannerSlide(
-    colors: [Color(0xFF0057FF), Color(0xFF3B82F6)],
-    emoji: '🌏',
-    title: 'Internet\n150+ Negara',
-    subtitle: 'Langsung aktif tanpa ganti kartu SIM.',
-    cta: 'Cek paket →',
-  ),
-  _BannerSlide(
-    colors: [Color(0xFF1a1a6e), Color(0xFFb21f1f)],
-    emoji: '🇯🇵',
-    title: 'eSIM Jepang\nmulai Rp 45.000',
-    subtitle: 'Data 1–5GB, aktivasi instan.',
-    cta: 'Beli sekarang →',
-  ),
+  _BannerSlide(imagePath: 'assets/banners/ad-airport.jpg'),
+  _BannerSlide(imagePath: 'assets/banners/ad-japan.jpg'),
+  _BannerSlide(imagePath: 'assets/banners/ad-china.jpg'),
 ];
 
 class _HeroBannerCarousel extends StatefulWidget {
@@ -307,77 +278,14 @@ class _HeroBannerCarouselState extends State<_HeroBannerCarousel> {
                 margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  gradient: LinearGradient(
-                    colors: s.colors,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Colors.grey.shade200,
                 ),
-                child: Stack(
-                  children: [
-                    // Dekorasi lingkaran
-                    Positioned(
-                      right: -20,
-                      top: -20,
-                      child: Container(
-                        width: 130,
-                        height: 130,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.08),
-                        ),
-                      ),
-                    ),
-                    // Konten
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 90, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            s.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              height: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            s.subtitle,
-                            style: const TextStyle(color: Colors.white70, fontSize: 11),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              s.cta,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Emoji dekoratif
-                    Positioned(
-                      right: 16,
-                      top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: Text(s.emoji, style: const TextStyle(fontSize: 54)),
-                      ),
-                    ),
-                  ],
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  s.imagePath,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
                 ),
               );
             },
