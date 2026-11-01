@@ -296,7 +296,7 @@ class _HeroBannerCarouselState extends State<_HeroBannerCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 150,
+          height: 172,
           child: PageView.builder(
             controller: _ctrl,
             itemCount: _bannerSlides.length,
