@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/theme/app_theme.dart';
@@ -45,19 +46,19 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero banner foto
-            _HeroBanner(),
+            // Hero banner — carousel auto-rotate
+            const _HeroBannerCarousel(),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
-            // Search card
+            // Search card — slim
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: AppTheme.primary,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,41 +67,41 @@ class HomeScreen extends StatelessWidget {
                       'Halo, Traveler! 👋',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     const Text(
                       'Mau kemana hari ini? Cari paket eSIM terbaik',
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     GestureDetector(
                       onTap: () => context.push('/packages'),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.search, color: AppTheme.textGrey),
-                            const SizedBox(width: 12),
+                            const Icon(Icons.search, color: AppTheme.textGrey, size: 18),
+                            const SizedBox(width: 10),
                             const Expanded(
                               child: Text(
                                 'Cari negara tujuan...',
-                                style: TextStyle(color: AppTheme.textGrey, fontSize: 15),
+                                style: TextStyle(color: AppTheme.textGrey, fontSize: 14),
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: AppTheme.primary,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                              child: const Icon(Icons.arrow_forward, color: Colors.white, size: 16),
                             ),
                           ],
                         ),
@@ -111,31 +112,31 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
-            // Banner HP support eSIM
+            // Banner HP support eSIM — slim
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GestureDetector(
                 onTap: () => context.push('/packages'),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF3CD),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: const Color(0xFFFFE082)),
                   ),
                   child: Row(
                     children: [
-                      const Text('📱', style: TextStyle(fontSize: 20)),
-                      const SizedBox(width: 12),
+                      const Text('📱', style: TextStyle(fontSize: 15)),
+                      const SizedBox(width: 10),
                       const Expanded(
                         child: Text(
                           'HP kamu support eSIM?',
                           style: TextStyle(
                             color: Color(0xFF856404),
                             fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                            fontSize: 12,
                           ),
                         ),
                       ),
@@ -144,7 +145,7 @@ class HomeScreen extends StatelessWidget {
                         style: TextStyle(
                           color: AppTheme.cta,
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -153,7 +154,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Destinasi populer header
             const Padding(
@@ -215,95 +216,197 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _HeroBanner extends StatelessWidget {
+// ── Banner carousel ──────────────────────────────────────────────────────────
+
+class _BannerSlide {
+  final List<Color> colors;
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final String cta;
+
+  const _BannerSlide({
+    required this.colors,
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+    required this.cta,
+  });
+}
+
+const _bannerSlides = [
+  _BannerSlide(
+    colors: [Color(0xFF006D6A), Color(0xFF00B4A8)],
+    emoji: '✈️',
+    title: 'Cari jalan.\nBagikan cerita.',
+    subtitle: 'Temani perjalananmu dengan GohoSIM.',
+    cta: 'Mulai sekarang →',
+  ),
+  _BannerSlide(
+    colors: [Color(0xFF0057FF), Color(0xFF3B82F6)],
+    emoji: '🌏',
+    title: 'Internet\n150+ Negara',
+    subtitle: 'Langsung aktif tanpa ganti kartu SIM.',
+    cta: 'Cek paket →',
+  ),
+  _BannerSlide(
+    colors: [Color(0xFF1a1a6e), Color(0xFFb21f1f)],
+    emoji: '🇯🇵',
+    title: 'eSIM Jepang\nmulai Rp 45.000',
+    subtitle: 'Data 1–5GB, aktivasi instan.',
+    cta: 'Beli sekarang →',
+  ),
+];
+
+class _HeroBannerCarousel extends StatefulWidget {
+  const _HeroBannerCarousel();
+
+  @override
+  State<_HeroBannerCarousel> createState() => _HeroBannerCarouselState();
+}
+
+class _HeroBannerCarouselState extends State<_HeroBannerCarousel> {
+  final PageController _ctrl = PageController();
+  int _current = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 3500), (_) {
+      if (!mounted) return;
+      final next = (_current + 1) % _bannerSlides.length;
+      _ctrl.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      height: 180,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF006D6A), Color(0xFF00B4A8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return Column(
+      children: [
+        SizedBox(
+          height: 150,
+          child: PageView.builder(
+            controller: _ctrl,
+            itemCount: _bannerSlides.length,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (ctx, i) {
+              final s = _bannerSlides[i];
+              return Container(
+                margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  gradient: LinearGradient(
+                    colors: s.colors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Dekorasi lingkaran
+                    Positioned(
+                      right: -20,
+                      top: -20,
+                      child: Container(
+                        width: 130,
+                        height: 130,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.08),
+                        ),
+                      ),
+                    ),
+                    // Konten
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 90, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            s.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            s.subtitle,
+                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              s.cta,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Emoji dekoratif
+                    Positioned(
+                      right: 16,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Text(s.emoji, style: const TextStyle(fontSize: 54)),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
-      ),
-      child: Stack(
-        children: [
-          // Dekorasi lingkaran
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Container(
-              width: 150,
-              height: 150,
+        // Dots indicator
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_bannerSlides.length, (i) {
+            final active = i == _current;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: active ? 18 : 6,
+              height: 6,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.08),
+                color: active ? AppTheme.primary : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(3),
               ),
-            ),
-          ),
-          Positioned(
-            right: 30,
-            bottom: -30,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.06),
-              ),
-            ),
-          ),
-          // Konten
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'gohoSIM',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 1,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Cari jalan.\nBagikan cerita.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Temani perjalananmu dengan GohoSIM.',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          // Icon pesawat dekoratif
-          const Positioned(
-            right: 24,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Text('✈️', style: TextStyle(fontSize: 60)),
-            ),
-          ),
-        ],
-      ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }
+
+// ── Country card ─────────────────────────────────────────────────────────────
 
 class _CountryCard extends StatelessWidget {
   final String flag;
