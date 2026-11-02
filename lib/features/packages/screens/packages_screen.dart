@@ -6,25 +6,49 @@ import '../../../core/providers/packages_provider.dart';
 import '../../../core/models/package_model.dart';
 import '../../../shared/theme/app_theme.dart';
 
+// ── Supplier colors (sama dengan dashboard) ───────────────────────────────────
+// ea = eSIM Access (biru), ir = iRoamly (hijau), ec = eSIMCard (ungu)
+Color _supplierColor(String supplier) {
+  switch (supplier) {
+    case 'ir': return const Color(0xFF16A34A); // iRoamly — hijau
+    case 'ec': return const Color(0xFF7C3AED); // eSIMCard — ungu
+    default:   return const Color(0xFF0EA5E9); // eSIM Access (ea) — biru
+  }
+}
+
+String _supplierLabel(String supplier) {
+  switch (supplier) {
+    case 'ir': return 'iRoamly';
+    case 'ec': return 'eSIMCard';
+    default:   return 'eSIM Access';
+  }
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
+
 class PackagesScreen extends StatefulWidget {
   final String countryCode;
   final String countryName;
   final String? countryFlag;
+  final bool isMultiCountry; // untuk filter Multi Negara
 
   const PackagesScreen({
     super.key,
     required this.countryCode,
     required this.countryName,
     this.countryFlag,
+    this.isMultiCountry = false,
   });
 
   @override
   State<PackagesScreen> createState() => _PackagesScreenState();
 }
 
+// Filter: 'all' | 'fixed' | 'unlimited'
+typedef _Filter = String;
+
 class _PackagesScreenState extends State<PackagesScreen> {
-  // Filter: 'all' | 'limited' | 'unlimited'
-  String _filter = 'all';
+  _Filter _filter = 'all';
   final _idr = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   @override
@@ -38,14 +62,13 @@ class _PackagesScreenState extends State<PackagesScreen> {
   List<EsimPackage> get _filtered {
     final all = context.read<PackagesProvider>().packages;
     if (_filter == 'unlimited') return all.where((p) => p.unlimited).toList();
-    if (_filter == 'limited') return all.where((p) => !p.unlimited).toList();
+    if (_filter == 'fixed')     return all.where((p) => !p.unlimited).toList();
     return all;
   }
 
-  // Counts for filter badges
-  int _count(String f, List<EsimPackage> all) {
+  int _count(_Filter f, List<EsimPackage> all) {
     if (f == 'unlimited') return all.where((p) => p.unlimited).length;
-    if (f == 'limited') return all.where((p) => !p.unlimited).length;
+    if (f == 'fixed')     return all.where((p) => !p.unlimited).length;
     return all.length;
   }
 
@@ -56,13 +79,13 @@ class _PackagesScreenState extends State<PackagesScreen> {
     final flag = widget.countryFlag ?? '';
 
     return Scaffold(
-      backgroundColor: AppTheme.bgLight,
+      backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          'Paket ${widget.countryName}',
+          widget.countryName,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
@@ -72,76 +95,67 @@ class _PackagesScreenState extends State<PackagesScreen> {
       ),
       body: Column(
         children: [
-          // ── Country header ──────────────────────────────────────
+          // ── Country header + filter 2x2 ────────────────────────
           Container(
-            width: double.infinity,
             color: AppTheme.primary,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-            child: Row(
-              children: [
-                if (flag.isNotEmpty) ...[
-                  Text(flag, style: const TextStyle(fontSize: 36)),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.countryName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (!provider.loading && provider.error == null)
-                        Text(
-                          '${all.length} paket tersedia',
-                          style: const TextStyle(color: Colors.white70, fontSize: 13),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Filter tabs ─────────────────────────────────────────
-          Container(
-            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
             child: Column(
               children: [
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Row(
-                    children: [
-                      _FilterTab(
-                        label: 'Semua',
-                        count: provider.loading ? null : _count('all', all),
-                        active: _filter == 'all',
-                        onTap: () => setState(() => _filter = 'all'),
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterTab(
-                        label: 'Kuota',
-                        count: provider.loading ? null : _count('limited', all),
-                        active: _filter == 'limited',
-                        onTap: () => setState(() => _filter = 'limited'),
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterTab(
-                        label: 'Unlimited',
-                        count: provider.loading ? null : _count('unlimited', all),
-                        active: _filter == 'unlimited',
-                        onTap: () => setState(() => _filter = 'unlimited'),
-                      ),
+                // Flag + nama + jumlah
+                Row(
+                  children: [
+                    if (flag.isNotEmpty) ...[
+                      Text(flag, style: const TextStyle(fontSize: 28)),
+                      const SizedBox(width: 10),
                     ],
-                  ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.countryName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (!provider.loading && provider.error == null)
+                            Text(
+                              '${all.length} pilihan paket',
+                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                const SizedBox(height: 14),
+
+                // Filter grid 2x2 seperti PWA
+                Row(
+                  children: [
+                    Expanded(
+                      child: _FilterBtn(
+                        emoji: '🌍',
+                        label: 'Fixed Data',
+                        active: _filter == 'fixed',
+                        count: provider.loading ? null : _count('fixed', all),
+                        onTap: () => setState(() => _filter = _filter == 'fixed' ? 'all' : 'fixed'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _FilterBtn(
+                        emoji: '♾️',
+                        label: 'Unlimited/Hari',
+                        active: _filter == 'unlimited',
+                        count: provider.loading ? null : _count('unlimited', all),
+                        onTap: () => setState(() => _filter = _filter == 'unlimited' ? 'all' : 'unlimited'),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -158,7 +172,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
                     : _filtered.isEmpty
                         ? const _EmptyState()
                         : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                             itemCount: _filtered.length,
                             itemBuilder: (context, i) {
                               final pkg = _filtered[i];
@@ -176,18 +190,20 @@ class _PackagesScreenState extends State<PackagesScreen> {
   }
 }
 
-// ── Filter tab ────────────────────────────────────────────────────────────────
+// ── Filter button (gaya PWA — pill dengan count kecil) ────────────────────────
 
-class _FilterTab extends StatelessWidget {
+class _FilterBtn extends StatelessWidget {
+  final String emoji;
   final String label;
-  final int? count;
   final bool active;
+  final int? count;
   final VoidCallback onTap;
 
-  const _FilterTab({
+  const _FilterBtn({
+    required this.emoji,
     required this.label,
-    required this.count,
     required this.active,
+    required this.count,
     required this.onTap,
   });
 
@@ -196,42 +212,48 @@ class _FilterTab extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         decoration: BoxDecoration(
-          color: active ? AppTheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          color: active ? Colors.white : Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: active ? AppTheme.primary : const Color(0xFFD1D5DB),
+            color: active ? Colors.white : Colors.white.withOpacity(0.4),
+            width: 1.5,
           ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: active ? Colors.white : AppTheme.textGrey,
-                fontSize: 13,
-                fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+            Text(emoji, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: active ? AppTheme.primary : Colors.white,
+                ),
               ),
             ),
             if (count != null) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
                   color: active
-                      ? Colors.white.withOpacity(0.3)
-                      : const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(10),
+                      ? AppTheme.primary.withOpacity(0.12)
+                      : Colors.white.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '$count',
                   style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: active ? Colors.white : AppTheme.textGrey,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: active ? AppTheme.primary : Colors.white,
                   ),
                 ),
               ),
@@ -243,7 +265,7 @@ class _FilterTab extends StatelessWidget {
   }
 }
 
-// ── Package card ──────────────────────────────────────────────────────────────
+// ── Package card (compact/slim) ───────────────────────────────────────────────
 
 class _PackageCard extends StatelessWidget {
   final EsimPackage pkg;
@@ -258,166 +280,140 @@ class _PackageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final supplierColor = _supplierColor(pkg.supplier);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           onTap: () => context.push('/checkout', extra: {
             'package': pkg,
             'countryName': countryName,
           }),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Top row: data badge + premium + price ──
+
+                // ── Baris 1: Data badge + premium + harga ──
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Data badge — large & prominent
+                    // Data badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: pkg.unlimited
-                            ? AppTheme.accent.withOpacity(0.12)
-                            : AppTheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                            ? AppTheme.accent.withOpacity(0.1)
+                            : AppTheme.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(7),
                         border: Border.all(
                           color: pkg.unlimited
-                              ? AppTheme.accent.withOpacity(0.4)
-                              : AppTheme.primary.withOpacity(0.3),
+                              ? AppTheme.accent.withOpacity(0.35)
+                              : AppTheme.primary.withOpacity(0.25),
                         ),
                       ),
                       child: Text(
                         pkg.dataLabel,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                          fontSize: 15,
                           color: pkg.unlimited ? AppTheme.accent : AppTheme.primary,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    if (pkg.isPremium)
+                    if (pkg.isPremium) ...[
+                      const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFEF3C7),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFF59E0B)),
+                          borderRadius: BorderRadius.circular(7),
                         ),
-                        child: const Text(
-                          '⭐ Premium',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF92400E),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: const Text('⭐',
+                            style: TextStyle(fontSize: 12)),
                       ),
+                    ],
                     const Spacer(),
-                    // Price — large, teal
+                    // Harga — teal bold
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           idr.format(pkg.priceIdr),
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primary,
                           ),
                         ),
                         const Text(
                           'per paket',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.textGrey,
-                          ),
+                          style: TextStyle(fontSize: 10, color: AppTheme.textGrey),
                         ),
                       ],
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
-                // ── Duration + speed row ──
+                // ── Baris 2: Durasi + tag fitur ──
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined, size: 15, color: AppTheme.textGrey),
-                    const SizedBox(width: 5),
+                    const Icon(Icons.calendar_today_outlined, size: 13, color: AppTheme.textGrey),
+                    const SizedBox(width: 4),
                     Text(
                       pkg.durationLabel,
-                      style: const TextStyle(color: AppTheme.textGrey, fontSize: 13),
+                      style: const TextStyle(color: AppTheme.textGrey, fontSize: 12),
                     ),
-                    const SizedBox(width: 16),
-                    const Icon(Icons.speed_outlined, size: 15, color: AppTheme.textGrey),
-                    const SizedBox(width: 5),
-                    Text(
-                      pkg.speed,
-                      style: const TextStyle(color: AppTheme.textGrey, fontSize: 13),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                // ── Feature tags ──
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    if (pkg.hotspot)
-                      _FeatureTag(
+                    const SizedBox(width: 10),
+                    // Speed tag — warna sesuai supplier
+                    _SpeedTag(speed: pkg.speed, color: supplierColor),
+                    if (pkg.hotspot) ...[
+                      const SizedBox(width: 6),
+                      _SmallTag(
                         icon: Icons.wifi_tethering,
                         label: 'Hotspot',
-                        color: const Color(0xFF0EA5E9),
+                        color: const Color(0xFF0891B2),
                       ),
-                    if (pkg.unlimited)
-                      _FeatureTag(
+                    ],
+                    if (pkg.unlimited) ...[
+                      const SizedBox(width: 6),
+                      _SmallTag(
                         icon: Icons.all_inclusive,
                         label: 'Unlimited',
                         color: AppTheme.accent,
                       ),
-                    if (!pkg.unlimited)
-                      _FeatureTag(
-                        icon: Icons.data_usage,
-                        label: 'Kuota ${pkg.dataLabel}',
-                        color: AppTheme.primary,
-                      ),
-                    _FeatureTag(
-                      icon: Icons.signal_cellular_alt,
-                      label: pkg.speed,
-                      color: const Color(0xFF7C3AED),
-                    ),
+                    ],
                   ],
                 ),
 
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: Color(0xFFF3F4F6)),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
+                const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                const SizedBox(height: 10),
 
-                // ── Action buttons ──
+                // ── Baris 3: Tombol ──
                 Row(
                   children: [
-                    // Detail button
-                    Expanded(
+                    // Detail — outline teal, slim
+                    SizedBox(
+                      height: 36,
                       child: OutlinedButton(
                         onPressed: () => context.push('/checkout', extra: {
                           'package': pkg,
@@ -426,45 +422,42 @@ class _PackageCard extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.primary,
                           side: const BorderSide(color: AppTheme.primary),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(7),
                           ),
                         ),
-                        child: const Text(
-                          'Detail',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                        ),
+                        child: const Text('Detail', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    // Beli button — orange CTA
+                    const SizedBox(width: 8),
+                    // Beli Sekarang — orange CTA, expand
                     Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        onPressed: () => context.push('/checkout', extra: {
-                          'package': pkg,
-                          'countryName': countryName,
-                        }),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.cta,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.shopping_cart_outlined, size: 16),
-                            SizedBox(width: 6),
-                            Text(
-                              'Beli Sekarang',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      child: SizedBox(
+                        height: 36,
+                        child: ElevatedButton(
+                          onPressed: () => context.push('/checkout', extra: {
+                            'package': pkg,
+                            'countryName': countryName,
+                          }),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.cta,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(7),
                             ),
-                          ],
+                            elevation: 0,
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.shopping_cart_outlined, size: 14),
+                              SizedBox(width: 5),
+                              Text('Beli Sekarang',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -479,35 +472,34 @@ class _PackageCard extends StatelessWidget {
   }
 }
 
-// ── Feature tag chip ──────────────────────────────────────────────────────────
+// ── Speed tag — warna = supplier ─────────────────────────────────────────────
 
-class _FeatureTag extends StatelessWidget {
-  final IconData icon;
-  final String label;
+class _SpeedTag extends StatelessWidget {
+  final String speed;
   final Color color;
 
-  const _FeatureTag({required this.icon, required this.label, required this.color});
+  const _SpeedTag({required this.speed, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
+          Icon(Icons.signal_cellular_alt, size: 11, color: color),
+          const SizedBox(width: 3),
           Text(
-            label,
+            speed,
             style: TextStyle(
               fontSize: 11,
               color: color,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -516,20 +508,52 @@ class _FeatureTag extends StatelessWidget {
   }
 }
 
-// ── Empty / error states ──────────────────────────────────────────────────────
+// ── Small feature tag ─────────────────────────────────────────────────────────
+
+class _SmallTag extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _SmallTag({required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Empty / error ─────────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
-
   @override
   Widget build(BuildContext context) {
     return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off_outlined, size: 48, color: AppTheme.textGrey),
-          SizedBox(height: 12),
-          Text('Tidak ada paket tersedia', style: TextStyle(color: AppTheme.textGrey)),
+          Icon(Icons.search_off_outlined, size: 44, color: AppTheme.textGrey),
+          SizedBox(height: 10),
+          Text('Tidak ada paket tersedia', style: TextStyle(color: AppTheme.textGrey, fontSize: 13)),
         ],
       ),
     );
@@ -539,7 +563,6 @@ class _EmptyState extends StatelessWidget {
 class _ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
-
   const _ErrorState({required this.message, required this.onRetry});
 
   @override
@@ -548,14 +571,11 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: AppTheme.danger),
-          const SizedBox(height: 12),
-          Text(message, style: const TextStyle(color: AppTheme.textGrey)),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: onRetry,
-            child: const Text('Coba lagi'),
-          ),
+          const Icon(Icons.error_outline, size: 44, color: AppTheme.danger),
+          const SizedBox(height: 10),
+          Text(message, style: const TextStyle(color: AppTheme.textGrey, fontSize: 13)),
+          const SizedBox(height: 14),
+          ElevatedButton(onPressed: onRetry, child: const Text('Coba lagi')),
         ],
       ),
     );
