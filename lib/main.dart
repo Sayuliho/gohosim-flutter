@@ -14,6 +14,7 @@ import 'features/packages/screens/country_picker_screen.dart';
 import 'features/packages/screens/packages_screen.dart';
 import 'features/checkout/screens/checkout_screen.dart';
 import 'features/my_esims/screens/my_esims_screen.dart';
+import 'features/esim_check/screens/esim_check_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 
 void main() {
@@ -47,7 +48,8 @@ final _router = GoRouter(
     GoRoute(path: '/login',    builder: (_, __) => const LoginScreen()),
     GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
     GoRoute(path: '/home',     builder: (_, __) => const HomeScreen()),
-    GoRoute(path: '/my-esims', builder: (_, __) => const MyEsimsScreen()),
+    GoRoute(path: '/my-esims',    builder: (_, __) => const MyEsimsScreen()),
+    GoRoute(path: '/esim-check', builder: (_, __) => const EsimCheckScreen()),
     GoRoute(path: '/profile',  builder: (_, __) => const ProfileScreen()),
 
     // Pilih negara (opsional: preselect dari query param)
