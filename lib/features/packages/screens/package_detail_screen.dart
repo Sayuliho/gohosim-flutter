@@ -163,10 +163,12 @@ class PackageDetailScreen extends StatelessWidget {
                   value: pkg.hotspot ? '✅ Tersedia' : '❌ Tidak tersedia',
                 ),
                 if (pkg.unlimited)
-                  const _InfoRow(
+                  _InfoRow(
                     icon: Icons.all_inclusive,
                     label: 'Tipe',
-                    value: 'Unlimited / Hari',
+                    value: pkg.dailyQuotaGb > 0
+                        ? 'Unlimited (${pkg.dailyQuotaGb % 1 == 0 ? pkg.dailyQuotaGb.toInt() : pkg.dailyQuotaGb}GB/hari)'
+                        : 'Unlimited / Hari',
                   )
                 else
                   const _InfoRow(
@@ -207,6 +209,35 @@ class PackageDetailScreen extends StatelessWidget {
                 ),
               ],
             ),
+
+            // ── Negara yang tercakup (untuk paket regional) ──
+            if (pkg.isRegional && pkg.supportedCountries.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _Section(
+                title: 'Negara yang Tercakup (${pkg.supportedCountries.length} negara)',
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: pkg.supportedCountries.map((code) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F4FF),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFBFD0FF)),
+                        ),
+                        child: Text(
+                          code,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF3B4FBB)),
+                        ),
+                      )).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ],
 
             const SizedBox(height: 12),
 

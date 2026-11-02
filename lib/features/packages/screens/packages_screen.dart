@@ -7,7 +7,6 @@ import '../../../core/models/package_model.dart';
 import '../../../shared/theme/app_theme.dart';
 
 // ── Supplier colors (sama dengan dashboard) ───────────────────────────────────
-// ea = eSIM Access (biru), ir = iRoamly (hijau), ec = eSIMCard (ungu)
 Color _supplierColor(String supplier) {
   switch (supplier) {
     case 'ir': return const Color(0xFF16A34A); // iRoamly — hijau
@@ -30,25 +29,24 @@ class PackagesScreen extends StatefulWidget {
   final String countryCode;
   final String countryName;
   final String? countryFlag;
-  final bool isMultiCountry; // untuk filter Multi Negara
 
   const PackagesScreen({
     super.key,
     required this.countryCode,
     required this.countryName,
     this.countryFlag,
-    this.isMultiCountry = false,
   });
 
   @override
   State<PackagesScreen> createState() => _PackagesScreenState();
 }
 
-// Filter: 'all' | 'fixed' | 'unlimited'
-typedef _Filter = String;
-
 class _PackagesScreenState extends State<PackagesScreen> {
-  _Filter _filter = 'all';
+  // Coverage: 'single' | 'regional'
+  String _coverage = 'single';
+  // Type: 'all' | 'fixed' | 'unlimited'
+  String _typeFilter = 'all';
+
   final _idr = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   @override
@@ -59,24 +57,33 @@ class _PackagesScreenState extends State<PackagesScreen> {
     });
   }
 
-  List<EsimPackage> get _filtered {
-    final all = context.read<PackagesProvider>().packages;
-    if (_filter == 'unlimited') return all.where((p) => p.unlimited).toList();
-    if (_filter == 'fixed')     return all.where((p) => !p.unlimited).toList();
-    return all;
+  List<EsimPackage> _applyTypeFilter(List<EsimPackage> pkgs) {
+    // Terapkan ALLOWED_DATA_GB filter (sama dengan PWA)
+    final filtered = pkgs.where((p) => p.isAllowedSize).toList();
+    if (_typeFilter == 'unlimited') return filtered.where((p) => p.unlimited).toList();
+    if (_typeFilter == 'fixed')     return filtered.where((p) => !p.unlimited).toList();
+    return filtered;
   }
 
-  int _count(_Filter f, List<EsimPackage> all) {
-    if (f == 'unlimited') return all.where((p) => p.unlimited).length;
-    if (f == 'fixed')     return all.where((p) => !p.unlimited).length;
-    return all.length;
+  int _countType(String t, List<EsimPackage> all) {
+    final filtered = all.where((p) => p.isAllowedSize).toList();
+    if (t == 'unlimited') return filtered.where((p) => p.unlimited).length;
+    if (t == 'fixed')     return filtered.where((p) => !p.unlimited).length;
+    return filtered.length;
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PackagesProvider>();
-    final all = provider.packages;
+    final singlePkgs = provider.packages;
+    final regionalPkgs = provider.bundles;
     final flag = widget.countryFlag ?? '';
+
+    // Paket yang ditampilkan sesuai tab Coverage
+    final displayPkgs = _coverage == 'regional' ? regionalPkgs : singlePkgs;
+    final isLoading = _coverage == 'regional' ? provider.loadingBundles : provider.loading;
+    final hasError = _coverage == 'regional' ? provider.bundlesError != null : provider.error != null;
+    final errorMsg = _coverage == 'regional' ? (provider.bundlesError ?? '') : (provider.error ?? '');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -95,7 +102,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
       ),
       body: Column(
         children: [
-          // ── Country header + filter 2x2 ────────────────────────
+          // ── Header teal ────────────────────────────────────────────
           Container(
             color: AppTheme.primary,
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
@@ -120,9 +127,9 @@ class _PackagesScreenState extends State<PackagesScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          if (!provider.loading && provider.error == null)
+                          if (!isLoading && !hasError)
                             Text(
-                              '${all.length} pilihan paket',
+                              '${_applyTypeFilter(displayPkgs).length} pilihan paket',
                               style: const TextStyle(color: Colors.white70, fontSize: 12),
                             ),
                         ],
@@ -132,50 +139,64 @@ class _PackagesScreenState extends State<PackagesScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // Filter grid 2x2 seperti PWA
-                Row(
-                  children: [
-                    Expanded(
-                      child: _FilterBtn(
-                        emoji: '🌍',
-                        label: 'Fixed Data',
-                        active: _filter == 'fixed',
-                        count: provider.loading ? null : _count('fixed', all),
-                        onTap: () => setState(() => _filter = _filter == 'fixed' ? 'all' : 'fixed'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _FilterBtn(
-                        emoji: '♾️',
-                        label: 'Unlimited/Hari',
-                        active: _filter == 'unlimited',
-                        count: provider.loading ? null : _count('unlimited', all),
-                        onTap: () => setState(() => _filter = _filter == 'unlimited' ? 'all' : 'unlimited'),
-                      ),
-                    ),
-                  ],
+                // ── Coverage toggle: Negara vs Regional ──
+                _CoverageToggle(
+                  value: _coverage,
+                  singleCount: !provider.loading ? singlePkgs.where((p) => p.isAllowedSize).length : null,
+                  regionalCount: !provider.loadingBundles ? regionalPkgs.length : null,
+                  onChanged: (v) => setState(() {
+                    _coverage = v;
+                    _typeFilter = 'all'; // reset type filter saat ganti coverage
+                  }),
                 ),
+
+                // ── Type filter: Fixed/Unlimited (hanya untuk tab single) ──
+                if (_coverage == 'single') ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _FilterBtn(
+                          emoji: '📦',
+                          label: 'Fixed Data',
+                          active: _typeFilter == 'fixed',
+                          count: provider.loading ? null : _countType('fixed', singlePkgs),
+                          onTap: () => setState(() => _typeFilter = _typeFilter == 'fixed' ? 'all' : 'fixed'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _FilterBtn(
+                          emoji: '♾️',
+                          label: 'Unlimited/Hari',
+                          active: _typeFilter == 'unlimited',
+                          count: provider.loading ? null : _countType('unlimited', singlePkgs),
+                          onTap: () => setState(() => _typeFilter = _typeFilter == 'unlimited' ? 'all' : 'unlimited'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
 
-          // ── Package list ────────────────────────────────────────
+          // ── Package list ────────────────────────────────────────────
           Expanded(
-            child: provider.loading
+            child: isLoading
                 ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-                : provider.error != null
+                : hasError
                     ? _ErrorState(
-                        message: provider.error!,
+                        message: errorMsg,
                         onRetry: () => provider.fetchPackages(widget.countryCode),
                       )
-                    : _filtered.isEmpty
+                    : _applyTypeFilter(displayPkgs).isEmpty
                         ? const _EmptyState()
                         : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-                            itemCount: _filtered.length,
+                            itemCount: _applyTypeFilter(displayPkgs).length,
                             itemBuilder: (context, i) {
-                              final pkg = _filtered[i];
+                              final pkg = _applyTypeFilter(displayPkgs)[i];
                               return _PackageCard(
                                 pkg: pkg,
                                 idr: _idr,
@@ -190,7 +211,126 @@ class _PackagesScreenState extends State<PackagesScreen> {
   }
 }
 
-// ── Filter button (gaya PWA — pill dengan count kecil) ────────────────────────
+// ── Coverage toggle (Negara / Regional) ──────────────────────────────────────
+
+class _CoverageToggle extends StatelessWidget {
+  final String value;
+  final int? singleCount;
+  final int? regionalCount;
+  final ValueChanged<String> onChanged;
+
+  const _CoverageToggle({
+    required this.value,
+    required this.singleCount,
+    required this.regionalCount,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        children: [
+          _Tab(
+            label: '🌏 Negara Ini',
+            count: singleCount,
+            active: value == 'single',
+            onTap: () => onChanged('single'),
+            leftRadius: true,
+          ),
+          _Tab(
+            label: '🗺️ Multi Negara',
+            count: regionalCount,
+            active: value == 'regional',
+            onTap: () => onChanged('regional'),
+            rightRadius: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
+  final String label;
+  final int? count;
+  final bool active;
+  final bool leftRadius;
+  final bool rightRadius;
+  final VoidCallback onTap;
+
+  const _Tab({
+    required this.label,
+    required this.count,
+    required this.active,
+    required this.onTap,
+    this.leftRadius = false,
+    this.rightRadius = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          height: 40,
+          decoration: BoxDecoration(
+            color: active ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.horizontal(
+              left: leftRadius ? const Radius.circular(22) : Radius.zero,
+              right: rightRadius ? const Radius.circular(22) : Radius.zero,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: active ? AppTheme.primary : Colors.white,
+                  ),
+                ),
+              ),
+              if (count != null) ...[
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: active
+                        ? AppTheme.primary.withOpacity(0.12)
+                        : Colors.white.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: active ? AppTheme.primary : Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Filter button (Fixed / Unlimited) ────────────────────────────────────────
 
 class _FilterBtn extends StatelessWidget {
   final String emoji;
@@ -337,6 +477,25 @@ class _PackageCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    // Daily quota untuk unlimited
+                    if (pkg.unlimited && pkg.dailyQuotaGb > 0) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Text(
+                          '${pkg.dailyQuotaGb % 1 == 0 ? pkg.dailyQuotaGb.toInt() : pkg.dailyQuotaGb}GB/hari',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.accent,
+                          ),
+                        ),
+                      ),
+                    ],
                     if (pkg.isPremium) ...[
                       const SizedBox(width: 6),
                       Container(
@@ -345,8 +504,7 @@ class _PackageCard extends StatelessWidget {
                           color: const Color(0xFFFEF3C7),
                           borderRadius: BorderRadius.circular(7),
                         ),
-                        child: const Text('⭐',
-                            style: TextStyle(fontSize: 12)),
+                        child: const Text('⭐', style: TextStyle(fontSize: 12)),
                       ),
                     ],
                     const Spacer(),
@@ -383,7 +541,6 @@ class _PackageCard extends StatelessWidget {
                       style: const TextStyle(color: AppTheme.textGrey, fontSize: 12),
                     ),
                     const SizedBox(width: 10),
-                    // Speed tag — warna sesuai supplier
                     _SpeedTag(speed: pkg.speed, color: supplierColor),
                     if (pkg.hotspot) ...[
                       const SizedBox(width: 6),
@@ -393,12 +550,12 @@ class _PackageCard extends StatelessWidget {
                         color: const Color(0xFF0891B2),
                       ),
                     ],
-                    if (pkg.unlimited) ...[
+                    if (pkg.isRegional) ...[
                       const SizedBox(width: 6),
                       _SmallTag(
-                        icon: Icons.all_inclusive,
-                        label: 'Unlimited',
-                        color: AppTheme.accent,
+                        icon: Icons.public_outlined,
+                        label: '${pkg.supportedCountries.length} negara',
+                        color: const Color(0xFF7C3AED),
                       ),
                     ],
                   ],
@@ -411,7 +568,6 @@ class _PackageCard extends StatelessWidget {
                 // ── Baris 3: Tombol ──
                 Row(
                   children: [
-                    // Detail — outline teal, slim
                     SizedBox(
                       height: 36,
                       child: OutlinedButton(
@@ -431,7 +587,6 @@ class _PackageCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Beli Sekarang — orange CTA, expand
                     Expanded(
                       child: SizedBox(
                         height: 36,
@@ -472,7 +627,7 @@ class _PackageCard extends StatelessWidget {
   }
 }
 
-// ── Speed tag — warna = supplier ─────────────────────────────────────────────
+// ── Speed tag ─────────────────────────────────────────────────────────────────
 
 class _SpeedTag extends StatelessWidget {
   final String speed;
@@ -494,14 +649,7 @@ class _SpeedTag extends StatelessWidget {
         children: [
           Icon(Icons.signal_cellular_alt, size: 11, color: color),
           const SizedBox(width: 3),
-          Text(
-            speed,
-            style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(speed, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -531,10 +679,7 @@ class _SmallTag extends StatelessWidget {
         children: [
           Icon(icon, size: 11, color: color),
           const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
-          ),
+          Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
         ],
       ),
     );
