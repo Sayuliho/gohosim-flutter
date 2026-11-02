@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/theme/app_theme.dart';
 
@@ -114,44 +115,10 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // Banner HP support eSIM — slim
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GestureDetector(
-                onTap: () => context.push('/esim-check'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3CD),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFFFE082)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text('📱', style: TextStyle(fontSize: 15)),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'HP kamu support eSIM?',
-                          style: TextStyle(
-                            color: Color(0xFF856404),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const Text(
-                        'Cek →',
-                        style: TextStyle(
-                          color: AppTheme.cta,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            // Banner HP support eSIM — auto-detect
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _EsimBanner(),
             ),
 
             const SizedBox(height: 20),
@@ -212,6 +179,108 @@ class HomeScreen extends StatelessWidget {
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person, color: AppTheme.primary), label: 'Profile'),
         ],
       ),
+    );
+  }
+}
+
+// ── eSIM Banner (auto-detect) ─────────────────────────────────────────────────
+
+class _EsimBanner extends StatefulWidget {
+  const _EsimBanner();
+  @override
+  State<_EsimBanner> createState() => _EsimBannerState();
+}
+
+class _EsimBannerState extends State<_EsimBanner> {
+  static const _ch = MethodChannel('com.gohotravel.gohosim/esim');
+  // null = sedang cek, true = support, false = tidak support
+  bool? _supported;
+
+  @override
+  void initState() {
+    super.initState();
+    _detect();
+  }
+
+  Future<void> _detect() async {
+    try {
+      final r = await _ch.invokeMapMethod<String, bool>('checkEsimSupport');
+      final api = r?['apiSupported'] ?? false;
+      final hw  = r?['hasHardware']  ?? false;
+      final en  = r?['isEnabled']    ?? false;
+      if (mounted) setState(() => _supported = api && hw && en);
+    } catch (_) {
+      if (mounted) setState(() => _supported = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Sedang mendeteksi
+    if (_supported == null) {
+      return GestureDetector(
+        onTap: () => context.push('/esim-check'),
+        child: _bannerShell(
+          color: const Color(0xFFF3F4F6),
+          border: const Color(0xFFD1D5DB),
+          icon: '📱',
+          label: 'Mengecek kompatibilitas eSIM...',
+          labelColor: const Color(0xFF6B7280),
+          trailing: const SizedBox(
+            width: 14, height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
+          ),
+        ),
+      );
+    }
+
+    // Support eSIM
+    if (_supported == true) {
+      return GestureDetector(
+        onTap: () => context.push('/esim-check'),
+        child: _bannerShell(
+          color: const Color(0xFFDCFCE7),
+          border: const Color(0xFF86EFAC),
+          icon: '✅',
+          label: 'HP kamu support eSIM',
+          labelColor: const Color(0xFF166534),
+          trailing: const Text('Detail →', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+        ),
+      );
+    }
+
+    // Tidak / tidak pasti
+    return GestureDetector(
+      onTap: () => context.push('/esim-check'),
+      child: _bannerShell(
+        color: const Color(0xFFFFF3CD),
+        border: const Color(0xFFFFE082),
+        icon: '📱',
+        label: 'HP kamu support eSIM?',
+        labelColor: const Color(0xFF856404),
+        trailing: const Text('Cek →', style: TextStyle(color: AppTheme.cta, fontWeight: FontWeight.bold, fontSize: 12)),
+      ),
+    );
+  }
+
+  Widget _bannerShell({
+    required Color color, required Color border,
+    required String icon, required String label, required Color labelColor,
+    required Widget trailing,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: border),
+      ),
+      child: Row(children: [
+        Text(icon, style: const TextStyle(fontSize: 15)),
+        const SizedBox(width: 10),
+        Expanded(child: Text(label, style: TextStyle(color: labelColor, fontWeight: FontWeight.w600, fontSize: 12))),
+        trailing,
+      ]),
     );
   }
 }
