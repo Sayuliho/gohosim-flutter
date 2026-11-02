@@ -12,6 +12,7 @@ import 'features/auth/screens/register_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/packages/screens/country_picker_screen.dart';
 import 'features/packages/screens/packages_screen.dart';
+import 'features/packages/screens/package_detail_screen.dart';
 import 'features/checkout/screens/checkout_screen.dart';
 import 'features/my_esims/screens/my_esims_screen.dart';
 import 'features/esim_check/screens/esim_check_screen.dart';
@@ -70,7 +71,19 @@ final _router = GoRouter(
       ),
     ),
 
-    // Checkout â€” package & countryName dikirim via extra
+    // Package detail — tidak perlu login
+    GoRoute(
+      path: '/package-detail',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final pkg   = extra?['package'] as EsimPackage?;
+        final name  = extra?['countryName'] as String? ?? '';
+        if (pkg == null) return const HomeScreen();
+        return PackageDetailScreen(pkg: pkg, countryName: name);
+      },
+    ),
+
+    // Checkout — package & countryName dikirim via extra
     GoRoute(
       path: '/checkout',
       builder: (_, state) {

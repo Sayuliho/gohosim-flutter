@@ -300,7 +300,7 @@ class _PackageCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => context.push('/checkout', extra: {
+          onTap: () => context.push('/package-detail', extra: {
             'package': pkg,
             'countryName': countryName,
           }),
@@ -415,7 +415,7 @@ class _PackageCard extends StatelessWidget {
                     SizedBox(
                       height: 36,
                       child: OutlinedButton(
-                        onPressed: () => context.push('/checkout', extra: {
+                        onPressed: () => context.push('/package-detail', extra: {
                           'package': pkg,
                           'countryName': countryName,
                         }),
