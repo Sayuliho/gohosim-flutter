@@ -85,6 +85,6 @@ class EsimPackage {
   bool get isRegional => coverageType == 'regional' || supportedCountries.length > 1;
 
   /// Untuk filter ALLOWED_DATA_GB (sama dengan PWA: hanya tampilkan 3,5,10,20,30 GB)
-  static const allowedDataGb = {3.0, 5.0, 10.0, 20.0, 30.0};
-  bool get isAllowedSize => unlimited || allowedDataGb.contains(dataGb);
+  static final _allowedDataGb = <int>{3, 5, 10, 20, 30};
+  bool get isAllowedSize => unlimited || _allowedDataGb.contains(dataGb.round());
 }
