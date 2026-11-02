@@ -84,7 +84,14 @@ class EsimPackage {
   String get durationLabel => '$durationDays Hari';
   bool get isRegional => coverageType == 'regional' || supportedCountries.length > 1;
 
-  /// Untuk filter ALLOWED_DATA_GB (sama dengan PWA: hanya tampilkan 3,5,10,20,30 GB)
+  /// Filter data GB yang diizinkan
   static final _allowedDataGb = <int>{3, 5, 10, 20, 30};
   bool get isAllowedSize => unlimited || _allowedDataGb.contains(dataGb.round());
+
+  /// Filter durasi yang diizinkan: 3, 5, 7, 10, 15, 30 hari
+  static final _allowedDuration = <int>{3, 5, 7, 10, 15, 30};
+  bool get isAllowedDuration => _allowedDuration.contains(durationDays);
+
+  /// Lolos semua filter tampilan
+  bool get isVisible => isAllowedSize && isAllowedDuration && !isHidden;
 }

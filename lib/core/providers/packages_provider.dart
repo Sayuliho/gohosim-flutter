@@ -29,7 +29,7 @@ class PackagesProvider extends ChangeNotifier {
       final list = (res['packages'] as List? ?? []);
       _packages = list
           .map((j) => EsimPackage.fromJson(j as Map<String, dynamic>))
-          .where((p) => !p.isHidden && p.durationDays >= 3) // sama dengan PWA filter
+          .where((p) => p.isVisible) // isVisible = isAllowedSize && isAllowedDuration && !isHidden
           .toList();
       _lastCountry = countryCode;
 

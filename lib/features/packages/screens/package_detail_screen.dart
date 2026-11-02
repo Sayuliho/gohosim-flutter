@@ -187,16 +187,10 @@ class PackageDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // ── Supplier ──
+            // ── Jaringan & Aktivasi ──
             _Section(
-              title: 'Jaringan & Supplier',
+              title: 'Jaringan & Aktivasi',
               children: [
-                _InfoRow(
-                  icon: Icons.business_outlined,
-                  label: 'Supplier',
-                  value: _supplierLabel(pkg.supplier),
-                  valueColor: supplierColor,
-                ),
                 const _InfoRow(
                   icon: Icons.public_outlined,
                   label: 'Aktivasi',
