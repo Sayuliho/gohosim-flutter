@@ -36,7 +36,7 @@ class PackageDetailScreen extends StatelessWidget {
     final supplierColor = _supplierColor(pkg.supplier);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: AppTheme.bgLight,
       appBar: AppBar(
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
@@ -322,7 +322,7 @@ class _InfoRow extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: AppTheme.textGrey),
           const SizedBox(width: 10),
-          Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 13)),
+          Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 13, fontWeight: FontWeight.w600)),
           const Spacer(),
           Text(
             value,
@@ -364,7 +364,7 @@ class _StepRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 13, color: AppTheme.textDark)),
+            child: Text(text, style: const TextStyle(fontSize: 13, color: AppTheme.textDark, fontWeight: FontWeight.w500)),
           ),
         ],
       ),
