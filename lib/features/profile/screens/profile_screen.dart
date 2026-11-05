@@ -39,7 +39,7 @@ class _ProfileContent extends StatelessWidget {
     final auth  = context.watch<AuthProvider>();
     final user  = auth.user!;
     final initial = user.name.isNotEmpty ? user.name[0].toUpperCase() : '?';
-    final isGoogle = user.googleId != null && user.googleId!.isNotEmpty;
+    const isGoogle = false; // Google login belum diimplementasi di model
 
     return SafeArea(
       child: SingleChildScrollView(
