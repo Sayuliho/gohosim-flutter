@@ -48,7 +48,7 @@ class _ProfileContent extends StatelessWidget {
             // ── Header ────────────────────────────────────────────
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: Row(
                 children: [
                   CircleAvatar(
@@ -96,11 +96,11 @@ class _ProfileContent extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
             // ── Menu Card ─────────────────────────────────────────
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -136,7 +136,7 @@ class _ProfileContent extends StatelessWidget {
                     iconBg: const Color(0xFFF0FDF4),
                     iconColor: const Color(0xFF16A34A),
                     label: 'Kebijakan Privasi',
-                    onTap: () => _launchUrl('https://gohosim.pages.dev/store/#privacy'),
+                    onTap: () => _showInfoSheet(context, 'Kebijakan Privasi', _privacyText),
                   ),
                   const _Divider(),
                   _MenuItem(
@@ -144,7 +144,7 @@ class _ProfileContent extends StatelessWidget {
                     iconBg: const Color(0xFFFFF7ED),
                     iconColor: const Color(0xFFF97316),
                     label: 'Syarat & Ketentuan',
-                    onTap: () => _launchUrl('https://gohosim.pages.dev/store/#terms'),
+                    onTap: () => _showInfoSheet(context, 'Syarat & Ketentuan', _termsText),
                   ),
                   const _Divider(),
                   _MenuItem(
@@ -176,7 +176,44 @@ class _ProfileContent extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showInfoSheet(BuildContext context, String title, String content) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        builder: (_, ctrl) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 8, 0),
+              child: Row(children: [
+                Text(title,
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Spacer(),
+                IconButton(onPressed: () => Navigator.pop(_), icon: const Icon(Icons.close)),
+              ]),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: ctrl,
+                padding: const EdgeInsets.all(16),
+                child: Text(content,
+                    style: const TextStyle(fontSize: 14, height: 1.7, color: Color(0xFF374151))),
+              ),
+            ),
           ],
         ),
       ),
@@ -223,6 +260,48 @@ class _ProfileContent extends StatelessWidget {
     }
   }
 }
+
+// ── Teks Kebijakan & Syarat ────────────────────────────────────────────────
+const _privacyText = '''
+GohoSIM berkomitmen menjaga privasi pengguna.
+
+1. Data yang Dikumpulkan
+Kami mengumpulkan nama, email, dan nomor WhatsApp yang kamu berikan saat mendaftar, serta data transaksi pembelian eSIM.
+
+2. Penggunaan Data
+Data digunakan untuk memproses pesanan, mengirim konfirmasi, dan memberikan dukungan pelanggan.
+
+3. Keamanan Data
+Data kamu disimpan dengan aman dan tidak dijual atau dibagikan kepada pihak ketiga tanpa persetujuan kamu, kecuali untuk keperluan pemrosesan pesanan (supplier eSIM).
+
+4. Hak Pengguna
+Kamu dapat memperbarui atau menghapus akun kamu kapan saja melalui menu Profil.
+
+5. Kontak
+Pertanyaan seputar privasi: cs@gohosim.com
+''';
+
+const _termsText = '''
+Syarat & Ketentuan penggunaan layanan GohoSIM.
+
+1. Layanan
+GohoSIM menyediakan layanan pembelian eSIM untuk perjalanan internasional. Produk yang dijual adalah eSIM digital dari supplier terpercaya.
+
+2. Pembelian
+Semua pembelian bersifat final. Refund dapat diajukan jika eSIM tidak aktif dalam 24 jam setelah aktivasi.
+
+3. Penggunaan eSIM
+eSIM yang dibeli hanya untuk penggunaan pribadi dan tidak untuk dijual kembali.
+
+4. Tanggung Jawab
+GohoSIM tidak bertanggung jawab atas gangguan jaringan dari operator lokal di negara tujuan.
+
+5. Perubahan Layanan
+GohoSIM berhak mengubah harga dan ketersediaan paket sewaktu-waktu.
+
+6. Kontak
+Dukungan pelanggan: cs@gohosim.com
+''';
 
 // ── Menu Item ──────────────────────────────────────────────────────────────
 class _MenuItem extends StatelessWidget {
