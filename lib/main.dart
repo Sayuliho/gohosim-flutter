@@ -9,6 +9,7 @@ import 'shared/theme/app_theme.dart';
 
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
+import 'features/auth/screens/forgot_password_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/packages/screens/country_picker_screen.dart';
 import 'features/packages/screens/packages_screen.dart';
@@ -46,8 +47,9 @@ final _router = GoRouter(
     return null;
   },
   routes: [
-    GoRoute(path: '/login',    builder: (_, __) => const LoginScreen()),
-    GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+    GoRoute(path: '/login',           builder: (_, __) => const LoginScreen()),
+    GoRoute(path: '/register',        builder: (_, __) => const RegisterScreen()),
+    GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordScreen()),
     GoRoute(path: '/home',     builder: (_, __) => const HomeScreen()),
     GoRoute(path: '/my-esims',    builder: (_, __) => const MyEsimsScreen()),
     GoRoute(path: '/esim-check', builder: (_, __) => const EsimCheckScreen()),
