@@ -48,25 +48,25 @@ class _ProfileContent extends StatelessWidget {
             // ── Header ────────────────────────────────────────────
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 30,
+                    radius: 26,
                     backgroundColor: AppTheme.primary,
                     child: Text(initial,
-                        style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
+                        style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Halo,', style: TextStyle(color: Color(0xFF6B7280), fontSize: 13)),
+                        const Text('Halo,', style: TextStyle(color: Color(0xFF6B7280), fontSize: 12)),
                         Text(user.name,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF111827))),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827))),
                         Text(user.email,
-                            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
                       ],
                     ),
                   ),
@@ -373,14 +373,14 @@ class _MenuItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: iconColor, size: 20),
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(9)),
+              child: Icon(icon, color: iconColor, size: 18),
             ),
             const SizedBox(width: 14),
             Expanded(
