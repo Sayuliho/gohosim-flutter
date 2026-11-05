@@ -282,25 +282,69 @@ Pertanyaan seputar privasi: cs@gohosim.com
 ''';
 
 const _termsText = '''
-Syarat & Ketentuan penggunaan layanan GohoSIM.
+Terakhir diperbarui: 30 Oktober 2026
 
-1. Layanan
-GohoSIM menyediakan layanan pembelian eSIM untuk perjalanan internasional. Produk yang dijual adalah eSIM digital dari supplier terpercaya.
+1. KETENTUAN UMUM
 
-2. Pembelian
-Semua pembelian bersifat final. Refund dapat diajukan jika eSIM tidak aktif dalam 24 jam setelah aktivasi.
+Dengan membeli atau menggunakan eSIM melalui GohoSIM, Anda menyatakan telah membaca, memahami, dan menyetujui seluruh syarat dan ketentuan ini.
 
-3. Penggunaan eSIM
-eSIM yang dibeli hanya untuk penggunaan pribadi dan tidak untuk dijual kembali.
+GohoSIM adalah layanan eSIM perjalanan yang bertindak sebagai reseller dari penyedia jaringan internasional. Layanan jaringan disediakan oleh mitra pihak ketiga; GohoSIM tidak mengoperasikan jaringan sendiri.
 
-4. Tanggung Jawab
-GohoSIM tidak bertanggung jawab atas gangguan jaringan dari operator lokal di negara tujuan.
+2. KOMPATIBILITAS PERANGKAT
 
-5. Perubahan Layanan
-GohoSIM berhak mengubah harga dan ketersediaan paket sewaktu-waktu.
+• Pelanggan wajib memastikan perangkat mendukung teknologi eSIM sebelum melakukan pembelian.
+• GohoSIM tidak bertanggung jawab atas pembelian eSIM yang tidak dapat digunakan karena perangkat tidak kompatibel.
+• Perangkat harus tidak terkunci (unlocked) dari operator asal agar eSIM dapat berfungsi.
 
-6. Kontak
-Dukungan pelanggan: cs@gohosim.com
+3. AKTIVASI DAN PENGGUNAAN
+
+• eSIM dikirimkan dalam bentuk QR Code melalui email dan akun GohoSIM Anda.
+• QR Code hanya dapat di-scan satu kali untuk instalasi. Setelah terpasang, tidak dapat dipindahkan ke perangkat lain.
+• Paket aktivasi otomatis: mulai berjalan saat eSIM pertama kali terhubung ke jaringan.
+• Paket aktivasi manual: mulai berjalan sesuai waktu yang ditentukan saat instalasi.
+• eSIM yang sudah diinstal tidak dapat dikembalikan ke kondisi semula.
+
+4. KEBIJAKAN REFUND DAN PEMBATALAN
+
+Refund dapat dipertimbangkan hanya jika:
+• eSIM belum diinstal dan belum digunakan sama sekali (pengajuan dalam 30 hari sejak pembelian)
+• Masalah teknis dari sisi penyedia jaringan yang tidak dapat diselesaikan, tanpa ada data yang telah digunakan
+• Gangguan jaringan signifikan yang dikonfirmasi oleh penyedia, dalam 30 hari sejak pembelian
+
+Refund TIDAK dapat diberikan untuk:
+• eSIM yang sudah diinstal dan/atau sudah ada penggunaan data
+• Sisa kuota yang tidak terpakai setelah masa berlaku habis
+• Pembelian lebih dari 60 hari yang lalu
+• Perangkat tidak kompatibel atau terkunci (locked)
+• Kualitas sinyal yang buruk di area tertentu
+• eSIM Virtual Number yang tidak menerima kode OTP
+
+Prosedur refund: Hubungi CS via WhatsApp dalam 30 hari sejak pembelian, sertakan nomor order, email, ICCID, dan penjelasan masalah. Proses verifikasi 3–7 hari kerja.
+
+5. FAIR USAGE POLICY (FUP)
+
+Beberapa paket memiliki batas kecepatan (throttle) setelah kuota tertentu habis — tercantum di deskripsi masing-masing paket. Penggunaan tethering/hotspot diperbolehkan pada paket yang mendukungnya.
+
+6. KETERSEDIAAN LAYANAN
+
+GohoSIM tidak menjamin ketersediaan jaringan 100% tanpa gangguan. Kualitas layanan bergantung pada jaringan mitra di masing-masing negara tujuan. GohoSIM tidak bertanggung jawab atas kerugian akibat gangguan jaringan, keterlambatan aktivasi, atau ketidaktersediaan layanan.
+
+7. PRIVASI DAN DATA
+
+Data pribadi pelanggan dikelola sesuai peraturan perlindungan data yang berlaku di Indonesia dan tidak dibagikan kepada pihak ketiga selain yang diperlukan untuk pemenuhan layanan.
+
+8. BATASAN TANGGUNG JAWAB
+
+Tanggung jawab maksimal GohoSIM terbatas pada nilai pembelian paket yang bersangkutan.
+
+9. PERUBAHAN SYARAT DAN KETENTUAN
+
+GohoSIM berhak mengubah syarat dan ketentuan ini sewaktu-waktu. Penggunaan layanan setelah perubahan berlaku berarti pelanggan menyetujui syarat dan ketentuan yang baru.
+
+10. KONTAK DAN BANTUAN
+
+WhatsApp CS : 018132210
+Jam Layanan : Senin–Minggu, 08.00–21.00 WIB
 ''';
 
 // ── Menu Item ──────────────────────────────────────────────────────────────
