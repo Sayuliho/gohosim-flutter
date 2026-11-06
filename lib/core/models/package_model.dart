@@ -52,7 +52,7 @@ class EsimPackage {
     }
 
     // Detect coverage type: multi-country jika ada supported_countries > 1 atau location_code mengandung koma
-    final locCode = (j['location_code'] ?? j['locationCode'] ?? '') as String;
+    final locCode = (j['location_code'] ?? j['locationCode'] ?? j['country_code'] ?? '') as String;
     String coverageType = (j['coverage_type'] ?? j['coverageType'] ?? 'single') as String;
     if (coverageType == 'single' && (countries.length > 1 || locCode.contains(','))) {
       coverageType = 'regional';
@@ -63,7 +63,7 @@ class EsimPackage {
       supplier: j['supplier'] ?? 'ea',
       name: j['name'] ?? '',
       locationCode: locCode,
-      locationName: j['location_name'] ?? j['locationName'] ?? '',
+      locationName: j['location_name'] ?? j['locationName'] ?? j['country_name'] ?? j['country'] ?? '',
       dataGb: unlimited ? 0 : ((j['data_gb'] ?? 0) as num).toDouble(),
       unlimited: unlimited,
       durationDays: (j['duration_days'] ?? j['duration'] ?? 0) as int,
