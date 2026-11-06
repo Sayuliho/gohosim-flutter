@@ -19,40 +19,46 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  final _formKey     = GlobalKey<FormState>();
-  final _nameCtrl    = TextEditingController();
-  final _emailCtrl   = TextEditingController();
-  final _waCtrl      = TextEditingController();
-  bool _loading      = false;
+  final _promoCtrl = TextEditingController();
+  bool _loading    = false;
+  bool _applyingPromo = false;
   String? _error;
+  String? _promoMessage;
+  bool _promoValid = false;
+  int _discount    = 0;
 
   final _idr = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   @override
-  void initState() {
-    super.initState();
-    // Pre-fill dari user login
-    final user = context.read<AuthProvider>().user;
-    if (user != null) {
-      _nameCtrl.text  = user.name;
-      _emailCtrl.text = user.email;
-      _waCtrl.text    = user.wa ?? '';
-    }
-  }
-
-  @override
   void dispose() {
-    _nameCtrl.dispose();
-    _emailCtrl.dispose();
-    _waCtrl.dispose();
+    _promoCtrl.dispose();
     super.dispose();
   }
 
+  int get _finalPrice => (widget.package.priceIdr - _discount).clamp(0, widget.package.priceIdr);
+
+  Future<void> _applyPromo() async {
+    final code = _promoCtrl.text.trim();
+    if (code.isEmpty) return;
+    setState(() { _applyingPromo = true; _promoMessage = null; });
+
+    // TODO: implement promo code validation endpoint
+    // For now just show "not valid"
+    await Future.delayed(const Duration(milliseconds: 500));
+    setState(() {
+      _applyingPromo = false;
+      _promoValid = false;
+      _promoMessage = 'Kode promo tidak ditemukan';
+      _discount = 0;
+    });
+  }
+
   Future<void> _checkout() async {
-    if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; _error = null; });
 
-    final pkg = widget.package;
+    final user = context.read<AuthProvider>().user;
+    final pkg  = widget.package;
+
     final res = await ApiClient.post('/midtrans/snap-token', {
       'items': [{
         'package_code':  pkg.packageCode,
@@ -65,15 +71,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'country_name':  widget.countryName,
         'qty':           1,
       }],
-      'customer_name':  _nameCtrl.text.trim(),
-      'customer_email': _emailCtrl.text.trim(),
-      'customer_wa':    _waCtrl.text.trim(),
+      'customer_name':  user?.name ?? '',
+      'customer_email': user?.email ?? '',
+      'customer_wa':    user?.wa ?? '',
+      if (_promoValid && _promoCtrl.text.isNotEmpty) 'promo_code': _promoCtrl.text.trim(),
     }, auth: true);
 
     if (!mounted) return;
 
     if (res['ok'] == true && res['snap_token'] != null) {
-      // Buka Midtrans Snap WebView
       final snapToken = res['snap_token'] as String;
       setState(() => _loading = false);
       _openSnapPayment(snapToken);
@@ -119,95 +125,163 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final pkg = widget.package;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Konfirmasi Pembelian')),
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        title: const Text('Checkout'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0.5,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Package summary
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Paket yang dipilih', style: TextStyle(color: AppTheme.textGrey, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+            // ── Paket card ──────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Flag
+                  Text(
+                    _countryFlag(pkg.locationCode),
+                    style: const TextStyle(fontSize: 44),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${pkg.dataLabel} • ${pkg.durationLabel}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(widget.countryName, style: const TextStyle(color: AppTheme.textGrey)),
-                            Text(pkg.speed, style: const TextStyle(color: AppTheme.textGrey, fontSize: 12)),
-                          ],
+                        Text(
+                          widget.countryName,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${pkg.dataLabel} · ${pkg.durationLabel}',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
                         ),
                         Text(
-                          _idr.format(pkg.priceIdr),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: AppTheme.primary,
-                          ),
+                          pkg.speed,
+                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    _idr.format(pkg.priceIdr),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primary),
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 16),
-
-            const Text(
-              'Data Pemesan',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
             const SizedBox(height: 12),
 
-            Form(
-              key: _formKey,
-              child: Column(
+            // ── Promo code ──────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
+                border: _promoValid
+                    ? Border.all(color: AppTheme.success, width: 1.5)
+                    : (_promoMessage != null && !_promoValid)
+                        ? Border.all(color: AppTheme.danger, width: 1.5)
+                        : null,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
                 children: [
-                  TextFormField(
-                    controller: _nameCtrl,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
-                      labelText: 'Nama Lengkap',
-                      prefixIcon: Icon(Icons.person_outlined),
+                  Icon(Icons.local_offer_outlined, color: Colors.grey[500], size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _promoCtrl,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: InputDecoration(
+                        hintText: 'Punya kode promo?',
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (_) {
+                        if (_promoMessage != null) {
+                          setState(() { _promoMessage = null; _promoValid = false; _discount = 0; });
+                        }
+                      },
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _emailCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email (opsional)',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
+                  TextButton(
+                    onPressed: _applyingPromo ? null : _applyPromo,
+                    child: _applyingPromo
+                        ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Text(
+                            'Pakai',
+                            style: TextStyle(
+                              color: AppTheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _waCtrl,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Nomor WhatsApp',
-                      prefixIcon: Icon(Icons.phone_outlined),
-                      hintText: '08xxxxxxxxxx',
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Nomor WA wajib diisi';
-                      if (v.length < 10) return 'Nomor WA tidak valid';
-                      return null;
-                    },
+                ],
+              ),
+            ),
+            if (_promoMessage != null) ...[
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  _promoMessage!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _promoValid ? AppTheme.success : AppTheme.danger,
+                  ),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 12),
+
+            // ── Order summary ────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Ringkasan Order',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  const SizedBox(height: 14),
+                  _summaryRow('Harga eSIM', _idr.format(pkg.priceIdr)),
+                  if (_discount > 0) ...[
+                    const SizedBox(height: 8),
+                    _summaryRow('Diskon Promo', '- ${_idr.format(_discount)}', valueColor: AppTheme.success),
+                  ],
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(height: 1),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text(
+                        _idr.format(_finalPrice),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primary),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -219,14 +293,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppTheme.danger.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppTheme.danger.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.error_outline, color: AppTheme.danger, size: 18),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(_error!, style: const TextStyle(color: AppTheme.danger))),
+                    Expanded(child: Text(_error!, style: const TextStyle(color: AppTheme.danger, fontSize: 13))),
                   ],
                 ),
               ),
@@ -234,49 +308,53 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const SizedBox(height: 24),
 
-            // Total & checkout button
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Total Pembayaran'),
-                      Text(
-                        _idr.format(pkg.priceIdr),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loading ? null : _checkout,
-                    child: _loading
-                        ? const SizedBox(
-                            height: 20, width: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          )
-                        : const Text('Bayar Sekarang'),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Pembayaran aman via Midtrans • Transfer / QRIS / Virtual Account',
-                    style: TextStyle(color: AppTheme.textGrey, fontSize: 11),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+            // ── Pay button ───────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _loading ? null : _checkout,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _loading
+                    ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                    : const Text('Bayar Sekarang', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ),
+
+            const SizedBox(height: 10),
+            const Center(
+              child: Text(
+                '🔒 Pembayaran aman via Midtrans\nTransfer Bank · QRIS · Virtual Account · GoPay',
+                style: TextStyle(color: AppTheme.textGrey, fontSize: 11),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
+  }
+
+  Widget _summaryRow(String label, String value, {Color? valueColor}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+        Text(value, style: TextStyle(fontSize: 13, color: valueColor, fontWeight: valueColor != null ? FontWeight.w600 : FontWeight.normal)),
+      ],
+    );
+  }
+
+  String _countryFlag(String isoCode) {
+    if (isoCode.length != 2) return '🌐';
+    final base = 0x1F1E6 - 0x41;
+    final first = isoCode.toUpperCase().codeUnitAt(0);
+    final second = isoCode.toUpperCase().codeUnitAt(1);
+    return String.fromCharCode(base + first) + String.fromCharCode(base + second);
   }
 }
 
