@@ -36,7 +36,10 @@ class _MyEsimsScreenState extends State<MyEsimsScreen> {
     final res = await ApiClient.get('/my-esims', auth: true);
     if (!mounted) return;
     if (res['ok'] == true) {
-      final list = (res['esims'] as List?)?.map((j) => Order.fromJson(j)).toList() ?? [];
+      final list = (res['esims'] as List?)
+          ?.map((j) => Order.fromJson(j))
+          .where((o) => o.status != 'cancelled')
+          .toList() ?? [];
       setState(() { _orders = list; _loading = false; });
     } else {
       setState(() { _error = res['error'] ?? 'Gagal memuat data'; _loading = false; });
