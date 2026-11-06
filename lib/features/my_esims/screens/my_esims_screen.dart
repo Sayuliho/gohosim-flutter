@@ -67,7 +67,12 @@ class _MyEsimsScreenState extends State<MyEsimsScreen> {
                           child: ListView.builder(
                             padding: const EdgeInsets.all(16),
                             itemCount: _orders.length,
-                            itemBuilder: (ctx, i) => _OrderCard(order: _orders[i]),
+                            itemBuilder: (ctx, i) => _OrderCard(
+                              order: _orders[i],
+                              onCancelled: () => setState(() {
+                                _orders.removeAt(i);
+                              }),
+                            ),
                           ),
                         ),
       bottomNavigationBar: NavigationBar(
@@ -86,9 +91,48 @@ class _MyEsimsScreenState extends State<MyEsimsScreen> {
   }
 }
 
-class _OrderCard extends StatelessWidget {
+class _OrderCard extends StatefulWidget {
   final Order order;
-  const _OrderCard({required this.order});
+  final VoidCallback? onCancelled;
+  const _OrderCard({required this.order, this.onCancelled});
+
+  @override
+  State<_OrderCard> createState() => _OrderCardState();
+}
+
+class _OrderCardState extends State<_OrderCard> {
+  bool _cancelling = false;
+
+  Order get order => widget.order;
+
+  Future<void> _cancelOrder(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Batalkan Order?'),
+        content: Text('Order #${order.orderRef} akan dibatalkan dan tidak bisa diaktifkan kembali.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Tidak')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Ya, Batalkan', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    setState(() => _cancelling = true);
+    final res = await ApiClient.patch('/order/${order.orderRef}/cancel', {}, auth: true);
+    if (!context.mounted) return;
+    setState(() => _cancelling = false);
+    if (res['ok'] == true) {
+      widget.onCancelled?.call();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res['error'] ?? 'Gagal membatalkan order')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,6 +169,10 @@ class _OrderCard extends StatelessWidget {
         statusIcon = Icons.info_outline;
     }
 
+    // Judul: "Japan" atau "JP" lalu paket ringkas "3GB / 3 Hari"
+    final countryDisplay = order.countryName ?? order.country ?? '—';
+    final packageSummary = '${order.dataLabel} / ${order.durationLabel}';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -132,14 +180,24 @@ class _OrderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // Header: nama negara + status badge
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    order.countryName ?? order.country ?? '—',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        countryDisplay,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        packageSummary,
+                        style: const TextStyle(fontSize: 14, color: AppTheme.textGrey),
+                      ),
+                    ],
                   ),
                 ),
                 Container(
@@ -161,28 +219,9 @@ class _OrderCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            // Detail
             Text(
               '#${order.orderRef}',
-              style: const TextStyle(color: AppTheme.textGrey, fontSize: 12, fontFamily: 'monospace'),
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-
-            // Data paket
-            Row(
-              children: [
-                _DetailItem(icon: Icons.storage_outlined, label: order.dataLabel ?? '—'),
-                const SizedBox(width: 20),
-                _DetailItem(icon: Icons.calendar_today_outlined, label: order.durationLabel ?? '—'),
-                const SizedBox(width: 20),
-                if (order.totalIdr != null)
-                  _DetailItem(
-                    icon: Icons.payment_outlined,
-                    label: idr.format(order.totalIdr),
-                  ),
-              ],
+              style: const TextStyle(color: AppTheme.textGrey, fontSize: 11, fontFamily: 'monospace'),
             ),
 
             // QR / aktivasi
@@ -216,14 +255,44 @@ class _OrderCard extends StatelessWidget {
               ),
             ],
 
-            // Pending — bayar sekarang
-            if (order.status == 'pending_payment' && order.snapToken != null) ...[
+            // Tombol aksi untuk pending_payment
+            if (order.status == 'pending_payment') ...[
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: () => _resumePayment(context, order),
                 icon: const Icon(Icons.payment, size: 16),
                 label: const Text('Bayar Sekarang'),
-                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 40)),
+                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 42)),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _cancelling ? null : () => _cancelOrder(context),
+                icon: _cancelling
+                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.cancel_outlined, size: 16, color: Colors.red),
+                label: Text(_cancelling ? 'Membatalkan...' : 'Batalkan Order',
+                    style: const TextStyle(color: Colors.red)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 42),
+                  side: const BorderSide(color: Colors.red),
+                ),
+              ),
+            ],
+
+            // Tombol cancel untuk pending biasa
+            if (order.status == 'pending') ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _cancelling ? null : () => _cancelOrder(context),
+                icon: _cancelling
+                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.cancel_outlined, size: 16, color: Colors.red),
+                label: Text(_cancelling ? 'Membatalkan...' : 'Batalkan Order',
+                    style: const TextStyle(color: Colors.red)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 42),
+                  side: const BorderSide(color: Colors.red),
+                ),
               ),
             ],
           ],
