@@ -42,21 +42,21 @@ const _countryNames = <String, String>{
   'IN': 'India', 'ID': 'Indonesia', 'IR': 'Iran', 'IQ': 'Irak',
   'IE': 'Irlandia', 'IL': 'Israel', 'IT': 'Italia', 'JM': 'Jamaika',
   'JP': 'Jepang', 'JO': 'Yordania', 'KZ': 'Kazakhstan', 'KE': 'Kenya',
-  'KW': 'Kuwait', 'KG': 'Kirgizstan', 'LA': 'Laos', 'LV': 'Latvia',
-  'LB': 'Lebanon', 'LY': 'Libya', 'LI': 'Liechtenstein', 'LT': 'Lithuania',
-  'LU': 'Luksemburg', 'MO': 'Makau', 'MK': 'Makedonia', 'MG': 'Madagaskar',
-  'MY': 'Malaysia', 'MV': 'Maladewa', 'MT': 'Malta', 'MR': 'Mauritania',
-  'MX': 'Meksiko', 'MD': 'Moldova', 'MC': 'Monako', 'MN': 'Mongolia',
-  'ME': 'Montenegro', 'MA': 'Maroko', 'MZ': 'Mozambik', 'MM': 'Myanmar',
-  'NP': 'Nepal', 'NL': 'Belanda', 'NZ': 'Selandia Baru', 'NI': 'Nikaragua',
-  'NG': 'Nigeria', 'NO': 'Norwegia', 'OM': 'Oman', 'PK': 'Pakistan',
-  'PA': 'Panama', 'PG': 'Papua', 'PY': 'Paraguay', 'PE': 'Peru',
-  'PH': 'Filipina', 'PL': 'Polandia', 'PT': 'Portugal', 'PR': 'Puerto Riko',
-  'QA': 'Qatar', 'RO': 'Rumania', 'RU': 'Rusia', 'RW': 'Rwanda',
-  'SA': 'Arab Saudi', 'SN': 'Senegal', 'RS': 'Serbia', 'SL': 'Sierra Leone',
-  'SG': 'Singapura', 'SK': 'Slovakia', 'SI': 'Slovenia', 'SO': 'Somalia',
-  'ZA': 'Afrika Selatan', 'ES': 'Spanyol', 'LK': 'Sri Lanka', 'SD': 'Sudan',
-  'SE': 'Swedia', 'CH': 'Swiss', 'SY': 'Suriah', 'TW': 'Taiwan',
+  'KW': 'Kuwait', 'KG': 'Kirgizstan', 'KR': 'Korea Selatan', 'LA': 'Laos',
+  'LV': 'Latvia', 'LB': 'Lebanon', 'LY': 'Libya', 'LI': 'Liechtenstein',
+  'LT': 'Lithuania', 'LU': 'Luksemburg', 'MO': 'Makau', 'MK': 'Makedonia',
+  'MG': 'Madagaskar', 'MY': 'Malaysia', 'MV': 'Maladewa', 'MT': 'Malta',
+  'MR': 'Mauritania', 'MX': 'Meksiko', 'MD': 'Moldova', 'MC': 'Monako',
+  'MN': 'Mongolia', 'ME': 'Montenegro', 'MA': 'Maroko', 'MZ': 'Mozambik',
+  'MM': 'Myanmar', 'NP': 'Nepal', 'NL': 'Belanda', 'NZ': 'Selandia Baru',
+  'NI': 'Nikaragua', 'NG': 'Nigeria', 'NO': 'Norwegia', 'OM': 'Oman',
+  'PK': 'Pakistan', 'PA': 'Panama', 'PG': 'Papua', 'PY': 'Paraguay',
+  'PE': 'Peru', 'PH': 'Filipina', 'PL': 'Polandia', 'PT': 'Portugal',
+  'PR': 'Puerto Riko', 'QA': 'Qatar', 'RO': 'Rumania', 'RU': 'Rusia',
+  'RW': 'Rwanda', 'SA': 'Arab Saudi', 'SN': 'Senegal', 'RS': 'Serbia',
+  'SL': 'Sierra Leone', 'SG': 'Singapura', 'SK': 'Slovakia', 'SI': 'Slovenia',
+  'SO': 'Somalia', 'ZA': 'Afrika Selatan', 'ES': 'Spanyol', 'LK': 'Sri Lanka',
+  'SD': 'Sudan', 'SE': 'Swedia', 'CH': 'Swiss', 'SY': 'Suriah', 'TW': 'Taiwan',
   'TJ': 'Tajikistan', 'TZ': 'Tanzania', 'TH': 'Thailand', 'TL': 'Timor Leste',
   'TG': 'Togo', 'TN': 'Tunisia', 'TR': 'Turki', 'TM': 'Turkmenistan',
   'UG': 'Uganda', 'UA': 'Ukraina', 'AE': 'Uni Emirat', 'GB': 'Inggris',
@@ -291,301 +291,116 @@ class _BundleListView extends StatelessWidget {
     required this.countryName,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
-      itemCount: bundles.length,
-      itemBuilder: (_, i) => _BundleCard(
-        bundle: bundles[i],
-        idr: idr,
-        countryName: countryName,
-      ),
-    );
-  }
-}
+  static const _gbOrder = [1.0, 2.0, 3.0, 5.0, 10.0, 20.0, 30.0];
 
-// ── Bundle card (expandable) ──────────────────────────────────────────────────
-
-class _BundleCard extends StatefulWidget {
-  final Bundle bundle;
-  final NumberFormat idr;
-  final String countryName;
-
-  const _BundleCard({
-    required this.bundle,
-    required this.idr,
-    required this.countryName,
-  });
-
-  @override
-  State<_BundleCard> createState() => _BundleCardState();
-}
-
-class _BundleCardState extends State<_BundleCard> {
-  bool _expanded = false;
-
-  String get _flagsLine {
-    return widget.bundle.countryCodes
-        .map((c) => _flagEmoji(c))
-        .join(' ');
-  }
-
-  String get _countriesLine {
-    final names = widget.bundle.countryCodes.map(_countryName).toList();
-    if (names.length <= 3) return names.join(' · ');
-    return '${names.take(3).join(' · ')} +${names.length - 3}';
+  Map<String, List<EsimPackage>> _groupBundlePkgs(List<EsimPackage> pkgs) {
+    final result = <String, List<EsimPackage>>{};
+    for (final gb in _gbOrder) {
+      final items = pkgs
+          .where((p) => !p.unlimited && p.dataGb == gb)
+          .toList()
+        ..sort((a, b) => a.durationDays.compareTo(b.durationDays));
+      if (items.isNotEmpty) result['${gb % 1 == 0 ? gb.toInt() : gb} GB'] = items;
+    }
+    final unl = pkgs.where((p) => p.unlimited).toList()
+      ..sort((a, b) => a.durationDays.compareTo(b.durationDays));
+    if (unl.isNotEmpty) result['Unlimited'] = unl;
+    return result;
   }
 
   @override
   Widget build(BuildContext context) {
-    final bundle = widget.bundle;
-    final pkgCount = bundle.packages.length;
+    final sections = <Widget>[];
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // ── Header (tappable) ──
-          InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.vertical(
-              top: const Radius.circular(14),
-              bottom: _expanded ? Radius.zero : const Radius.circular(14),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
-              child: Row(
-                children: [
-                  // Flag emojis besar
-                  Text(_flagsLine, style: const TextStyle(fontSize: 20)),
-                  const SizedBox(width: 10),
+    for (final bundle in bundles) {
+      final codes = bundle.countryCodes;
+      final names = codes.map(_countryName).toList();
 
-                  // Nama + negara
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _countriesLine,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textDark,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Row(children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${bundle.countryCount} Negara',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.primary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '$pkgCount paket tersedia',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.textGrey,
-                            ),
-                          ),
-                        ]),
-                      ],
-                    ),
-                  ),
+      // Judul bundle: "JEPANG & KOREA SELATAN"
+      final titleText = names.map((n) => n.toUpperCase()).join(' & ');
 
-                  // Chevron
-                  AnimatedRotation(
-                    turns: _expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.keyboard_arrow_down,
-                        color: AppTheme.textGrey, size: 22),
-                  ),
-                ],
+      // Header banner
+      sections.add(
+        Container(
+          margin: const EdgeInsets.fromLTRB(0, 16, 0, 10),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: AppTheme.primary,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primary.withOpacity(0.35),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
-            ),
+            ],
           ),
-
-          // ── Expanded: package list ──
-          if (_expanded) ...[
-            const Divider(height: 1, color: Color(0xFFF0EDE0)),
-            ...bundle.packages.asMap().entries.map((e) {
-              final idx = e.key;
-              final pkg = e.value;
-              final isLast = idx == bundle.packages.length - 1;
-              return _BundlePackageRow(
-                pkg: pkg,
-                idr: widget.idr,
-                isLast: isLast,
-                countryName: widget.countryName,
-              );
-            }),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ── Package row inside a bundle ───────────────────────────────────────────────
-
-class _BundlePackageRow extends StatelessWidget {
-  final EsimPackage pkg;
-  final NumberFormat idr;
-  final bool isLast;
-  final String countryName;
-
-  const _BundlePackageRow({
-    required this.pkg,
-    required this.idr,
-    required this.isLast,
-    required this.countryName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final supplierColor = _supplierColor(pkg.supplier);
-
-    return Column(
-      children: [
-        InkWell(
-          onTap: () => context.push('/package-detail', extra: {
-            'package': pkg,
-            'countryName': countryName,
-          }),
-          borderRadius: BorderRadius.only(
-            bottomLeft:  isLast ? const Radius.circular(14) : Radius.zero,
-            bottomRight: isLast ? const Radius.circular(14) : Radius.zero,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-            child: Row(
-              children: [
-                // Kiri: data size + durasi + tags
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            children: [
+              Text(
+                titleText,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Flag + nama tiap negara
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: codes.asMap().entries.map((e) {
+                  final i = e.key;
+                  final code = e.value;
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Data + durasi
-                      Row(children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: pkg.unlimited ? AppTheme.cta.withOpacity(0.12) : AppTheme.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            pkg.unlimited ? 'Unlimited' : '${pkg.dataGb % 1 == 0 ? pkg.dataGb.toInt() : pkg.dataGb} GB',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: pkg.unlimited ? AppTheme.cta : AppTheme.primary,
-                            ),
-                          ),
+                      if (i > 0) ...[
+                        const SizedBox(width: 10),
+                        const Text('·', style: TextStyle(color: Colors.white54)),
+                        const SizedBox(width: 10),
+                      ],
+                      Text(_flagEmoji(code), style: const TextStyle(fontSize: 18)),
+                      const SizedBox(width: 5),
+                      Text(
+                        _countryName(code),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          pkg.durationLabel,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textDark,
-                          ),
-                        ),
-                      ]),
-                      const SizedBox(height: 5),
-                      // Tags
-                      Wrap(
-                        spacing: 5,
-                        runSpacing: 4,
-                        children: [
-                          _SmallTag(
-                            icon: Icons.signal_cellular_alt,
-                            label: pkg.speed,
-                            color: supplierColor,
-                          ),
-                          if (pkg.hotspot)
-                            const _SmallTag(
-                              icon: Icons.wifi_tethering,
-                              label: 'Hotspot',
-                              color: Color(0xFF0891B2),
-                            ),
-                          if (pkg.unlimited && pkg.dailyQuotaGb > 0)
-                            _SmallTag(
-                              icon: Icons.all_inclusive,
-                              label: '${pkg.dailyQuotaGb % 1 == 0 ? pkg.dailyQuotaGb.toInt() : pkg.dailyQuotaGb}GB/hari',
-                              color: AppTheme.cta,
-                            ),
-                        ],
                       ),
                     ],
-                  ),
-                ),
-
-                // Kanan: harga + tombol beli
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      idr.format(pkg.priceIdr),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    SizedBox(
-                      height: 30,
-                      child: ElevatedButton(
-                        onPressed: () => context.push('/checkout', extra: {
-                          'package': pkg,
-                          'countryName': countryName,
-                        }),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.cta,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          minimumSize: Size.zero,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
-                        ),
-                        child: const Text('Beli',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
         ),
-        if (!isLast)
-          const Divider(height: 1, indent: 14, endIndent: 14, color: Color(0xFFF5F0E8)),
-      ],
+      );
+
+      // Grouped packages (same style as Negara Ini)
+      final grouped = _groupBundlePkgs(bundle.packages);
+      for (final entry in grouped.entries) {
+        final label = entry.key;
+        final items = entry.value;
+        final isUnl = label == 'Unlimited';
+        sections.add(_GroupSection(
+          label: label,
+          isUnlimited: isUnl,
+          items: items,
+          idr: idr,
+          countryName: countryName,
+        ));
+      }
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
+      children: sections,
     );
   }
 }
