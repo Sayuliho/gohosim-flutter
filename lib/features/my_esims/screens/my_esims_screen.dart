@@ -170,7 +170,7 @@ class _OrderCardState extends State<_OrderCard> {
     }
 
     // Judul: "Japan" atau "JP" lalu paket ringkas "3GB / 3 Hari"
-    final countryDisplay = order.countryName ?? order.country ?? '—';
+    final countryDisplay = order.countryDisplayName;
     final packageSummary = '${order.dataLabel} / ${order.durationLabel}';
 
     return Card(

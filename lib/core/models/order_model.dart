@@ -1,3 +1,20 @@
+const _countryNames = {
+  'JP': 'Japan', 'SG': 'Singapore', 'MY': 'Malaysia', 'TH': 'Thailand',
+  'ID': 'Indonesia', 'PH': 'Philippines', 'VN': 'Vietnam', 'KR': 'South Korea',
+  'CN': 'China', 'HK': 'Hong Kong', 'TW': 'Taiwan', 'IN': 'India',
+  'AU': 'Australia', 'NZ': 'New Zealand', 'US': 'United States', 'GB': 'United Kingdom',
+  'DE': 'Germany', 'FR': 'France', 'IT': 'Italy', 'ES': 'Spain',
+  'NL': 'Netherlands', 'CH': 'Switzerland', 'AT': 'Austria', 'BE': 'Belgium',
+  'SE': 'Sweden', 'NO': 'Norway', 'DK': 'Denmark', 'FI': 'Finland',
+  'PT': 'Portugal', 'PL': 'Poland', 'CZ': 'Czech Republic', 'TR': 'Turkey',
+  'AE': 'UAE', 'SA': 'Saudi Arabia', 'EG': 'Egypt', 'ZA': 'South Africa',
+  'BR': 'Brazil', 'MX': 'Mexico', 'AR': 'Argentina', 'CL': 'Chile',
+  'CA': 'Canada', 'RU': 'Russia', 'UA': 'Ukraine', 'GR': 'Greece',
+  'MM': 'Myanmar', 'KH': 'Cambodia', 'LA': 'Laos', 'BD': 'Bangladesh',
+  'PK': 'Pakistan', 'LK': 'Sri Lanka', 'NP': 'Nepal', 'MO': 'Macau',
+  'BN': 'Brunei', 'MN': 'Mongolia', 'KZ': 'Kazakhstan', 'UZ': 'Uzbekistan',
+};
+
 class Order {
   final String orderRef;
   final String supplier;
@@ -67,6 +84,10 @@ class Order {
             ? DateTime.tryParse(j['created_at']) ?? DateTime.now()
             : DateTime.now(),
       );
+
+  /// Human-readable country name, e.g. "Japan", "Singapore"
+  String get countryDisplayName =>
+      countryName ?? _countryNames[country.toUpperCase()] ?? country;
 
   bool get isActive    => status == 'active';
   bool get isPending   => status == 'pending' || status == 'pending_payment';
