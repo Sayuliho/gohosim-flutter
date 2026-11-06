@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/models/order_model.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -35,7 +36,7 @@ class _MyEsimsScreenState extends State<MyEsimsScreen> {
     final res = await ApiClient.get('/my-esims', auth: true);
     if (!mounted) return;
     if (res['ok'] == true) {
-      final list = (res['orders'] as List?)?.map((j) => Order.fromJson(j)).toList() ?? [];
+      final list = (res['esims'] as List?)?.map((j) => Order.fromJson(j)).toList() ?? [];
       setState(() { _orders = list; _loading = false; });
     } else {
       setState(() { _error = res['error'] ?? 'Gagal memuat data'; _loading = false; });
@@ -233,15 +234,44 @@ class _OrderCard extends StatelessWidget {
 
   void _resumePayment(BuildContext context, Order order) async {
     if (order.snapToken == null) return;
-    // Ambil fresh snap token dari server
-    final res = await ApiClient.post('/midtrans/resume-payment', {
-      'order_ref': order.orderRef,
-    }, auth: true);
+    // Ambil fresh snap token dari server (endpoint GET dengan query param)
+    final res = await ApiClient.get(
+      '/midtrans/resume-payment?order_ref=${order.orderRef}',
+      auth: true,
+    );
     if (!context.mounted) return;
     if (res['ok'] == true && res['snap_token'] != null) {
-      // TODO: buka WebView — sama seperti CheckoutScreen._openSnapPayment
+      final snapToken = res['snap_token'] as String;
+      final snapUrl   = res['snap_url'] as String? ??
+          'https://app.sandbox.midtrans.com/snap/snap.js';
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _SnapWebView(
+            snapToken: snapToken,
+            snapUrl: snapUrl,
+            onSuccess: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✅ Pembayaran berhasil! eSIM sedang diproses'),
+                  backgroundColor: AppTheme.success,
+                ),
+              );
+            },
+            onPending: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Pembayaran pending — cek berkala')),
+              );
+            },
+            onClose: () => Navigator.pop(context),
+          ),
+        ),
+      );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Membuka halaman pembayaran...')),
+        SnackBar(content: Text(res['error'] ?? 'Gagal membuka pembayaran')),
       );
     }
   }
@@ -338,6 +368,94 @@ class _ErrorView extends StatelessWidget {
           ElevatedButton(onPressed: onRetry, child: const Text('Coba lagi')),
         ],
       ),
+    );
+  }
+}
+
+// ── Snap WebView untuk resume payment ────────────────────────────
+class _SnapWebView extends StatefulWidget {
+  final String snapToken;
+  final String snapUrl;
+  final VoidCallback onSuccess;
+  final VoidCallback onPending;
+  final VoidCallback onClose;
+
+  const _SnapWebView({
+    required this.snapToken,
+    required this.snapUrl,
+    required this.onSuccess,
+    required this.onPending,
+    required this.onClose,
+  });
+
+  @override
+  State<_SnapWebView> createState() => _SnapWebViewState();
+}
+
+class _SnapWebViewState extends State<_SnapWebView> {
+  late final WebViewController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (req) {
+            final url = req.url;
+            if (url.contains('gohosim-success') || url.contains('status=success')) {
+              widget.onSuccess();
+              return NavigationDecision.prevent;
+            }
+            if (url.contains('gohosim-pending') || url.contains('status=pending')) {
+              widget.onPending();
+              return NavigationDecision.prevent;
+            }
+            if (url.contains('gohosim-error') || url.contains('status=error')) {
+              widget.onClose();
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadHtmlString(_buildSnapHtml());
+  }
+
+  String _buildSnapHtml() => '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="${widget.snapUrl}" data-client-key=""></script>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fa;">
+<script>
+  window.onload = function() {
+    snap.pay('${widget.snapToken}', {
+      onSuccess: function(r) { window.location = 'gohosim-success://'; },
+      onPending: function(r) { window.location = 'gohosim-pending://'; },
+      onError:   function(r) { window.location = 'gohosim-error://'; },
+      onClose:   function()  { window.location = 'gohosim-error://'; }
+    });
+  };
+</script>
+</body>
+</html>
+''';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pembayaran'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: widget.onClose,
+        ),
+      ),
+      body: WebViewWidget(controller: _ctrl),
     );
   }
 }
