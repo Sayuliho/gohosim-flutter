@@ -86,8 +86,13 @@ class Order {
       );
 
   /// Human-readable country name, e.g. "Japan", "Singapore"
-  String get countryDisplayName =>
-      countryName ?? _countryNames[country.toUpperCase()] ?? country;
+  /// Returns empty string if country code is unknown/empty.
+  String get countryDisplayName {
+    if (countryName != null && countryName!.isNotEmpty) return countryName!;
+    final code = country.trim().toUpperCase();
+    if (code.isEmpty) return '';
+    return _countryNames[code] ?? code;
+  }
 
   bool get isActive    => status == 'active';
   bool get isPending   => status == 'pending' || status == 'pending_payment';

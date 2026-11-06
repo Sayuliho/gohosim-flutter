@@ -188,14 +188,20 @@ class _OrderCardState extends State<_OrderCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        countryDisplay,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                      ),
-                      const SizedBox(height: 2),
+                      if (countryDisplay.isNotEmpty) ...[
+                        Text(
+                          countryDisplay,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                        ),
+                        const SizedBox(height: 2),
+                      ],
                       Text(
                         packageSummary,
-                        style: const TextStyle(fontSize: 14, color: AppTheme.textGrey),
+                        style: TextStyle(
+                          fontSize: countryDisplay.isEmpty ? 17 : 14,
+                          fontWeight: countryDisplay.isEmpty ? FontWeight.bold : FontWeight.normal,
+                          color: countryDisplay.isEmpty ? null : AppTheme.textGrey,
+                        ),
                       ),
                     ],
                   ),
