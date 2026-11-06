@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import '../api/api_client.dart';
 import '../models/package_model.dart';
+import '../models/bundle_model.dart';
 
 class PackagesProvider extends ChangeNotifier {
   List<EsimPackage> _packages = [];
-  List<EsimPackage> _bundles = [];
+  List<Bundle> _bundles = [];
   bool _loading = false;
   bool _loadingBundles = false;
   String? _error;
@@ -12,7 +13,7 @@ class PackagesProvider extends ChangeNotifier {
   String? _lastCountry;
 
   List<EsimPackage> get packages => _packages;
-  List<EsimPackage> get bundles => _bundles;
+  List<Bundle> get bundles => _bundles;
   bool get loading => _loading;
   bool get loadingBundles => _loadingBundles;
   String? get error => _error;
@@ -51,8 +52,8 @@ class PackagesProvider extends ChangeNotifier {
     if (res['ok'] == true || res['bundles'] != null) {
       final list = (res['bundles'] as List? ?? []);
       _bundles = list
-          .map((j) => EsimPackage.fromJson(j as Map<String, dynamic>))
-          .where((p) => !p.isHidden)
+          .map((j) => Bundle.fromJson(j as Map<String, dynamic>))
+          .where((b) => b.packages.isNotEmpty)
           .toList();
     } else {
       _bundlesError = res['error'];

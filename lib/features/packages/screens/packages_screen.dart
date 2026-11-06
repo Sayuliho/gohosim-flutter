@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/packages_provider.dart';
 import '../../../core/models/package_model.dart';
+import '../../../core/models/bundle_model.dart';
 import '../../../shared/theme/app_theme.dart';
 
 // ── Supplier colors ───────────────────────────────────────────────────────────
@@ -14,6 +15,56 @@ Color _supplierColor(String supplier) {
     default:   return const Color(0xFF0EA5E9);
   }
 }
+
+// ── Flag emoji from ISO-2 country code ───────────────────────────────────────
+String _flagEmoji(String code) {
+  if (code.length != 2) return '';
+  const base = 0x1F1E6 - 65; // 'A' = 65
+  return String.fromCharCode(base + code.codeUnitAt(0)) +
+         String.fromCharCode(base + code.codeUnitAt(1));
+}
+
+// ── Country name ID from ISO-2 code ──────────────────────────────────────────
+const _countryNames = <String, String>{
+  'AF': 'Afghanistan', 'AL': 'Albania', 'DZ': 'Aljazair', 'AD': 'Andorra',
+  'AO': 'Angola', 'AR': 'Argentina', 'AM': 'Armenia', 'AU': 'Australia',
+  'AT': 'Austria', 'AZ': 'Azerbaijan', 'BH': 'Bahrain', 'BD': 'Bangladesh',
+  'BY': 'Belarus', 'BE': 'Belgia', 'BZ': 'Belize', 'BJ': 'Benin',
+  'BT': 'Bhutan', 'BO': 'Bolivia', 'BA': 'Bosnia', 'BW': 'Botswana',
+  'BR': 'Brasil', 'BN': 'Brunei', 'BG': 'Bulgaria', 'KH': 'Kamboja',
+  'CM': 'Kamerun', 'CA': 'Kanada', 'CL': 'Chili', 'CN': 'China',
+  'CO': 'Kolombia', 'CG': 'Kongo', 'CR': 'Kosta Rika', 'HR': 'Kroasia',
+  'CY': 'Siprus', 'CZ': 'Ceko', 'DK': 'Denmark', 'EC': 'Ekuador',
+  'EG': 'Mesir', 'SV': 'El Salvador', 'EE': 'Estonia', 'ET': 'Etiopia',
+  'FI': 'Finlandia', 'FR': 'Prancis', 'GE': 'Georgia', 'DE': 'Jerman',
+  'GH': 'Ghana', 'GR': 'Yunani', 'GT': 'Guatemala', 'GN': 'Guinea',
+  'HN': 'Honduras', 'HK': 'Hong Kong', 'HU': 'Hungaria', 'IS': 'Islandia',
+  'IN': 'India', 'ID': 'Indonesia', 'IR': 'Iran', 'IQ': 'Irak',
+  'IE': 'Irlandia', 'IL': 'Israel', 'IT': 'Italia', 'JM': 'Jamaika',
+  'JP': 'Jepang', 'JO': 'Yordania', 'KZ': 'Kazakhstan', 'KE': 'Kenya',
+  'KW': 'Kuwait', 'KG': 'Kirgizstan', 'LA': 'Laos', 'LV': 'Latvia',
+  'LB': 'Lebanon', 'LY': 'Libya', 'LI': 'Liechtenstein', 'LT': 'Lithuania',
+  'LU': 'Luksemburg', 'MO': 'Makau', 'MK': 'Makedonia', 'MG': 'Madagaskar',
+  'MY': 'Malaysia', 'MV': 'Maladewa', 'MT': 'Malta', 'MR': 'Mauritania',
+  'MX': 'Meksiko', 'MD': 'Moldova', 'MC': 'Monako', 'MN': 'Mongolia',
+  'ME': 'Montenegro', 'MA': 'Maroko', 'MZ': 'Mozambik', 'MM': 'Myanmar',
+  'NP': 'Nepal', 'NL': 'Belanda', 'NZ': 'Selandia Baru', 'NI': 'Nikaragua',
+  'NG': 'Nigeria', 'NO': 'Norwegia', 'OM': 'Oman', 'PK': 'Pakistan',
+  'PA': 'Panama', 'PG': 'Papua', 'PY': 'Paraguay', 'PE': 'Peru',
+  'PH': 'Filipina', 'PL': 'Polandia', 'PT': 'Portugal', 'PR': 'Puerto Riko',
+  'QA': 'Qatar', 'RO': 'Rumania', 'RU': 'Rusia', 'RW': 'Rwanda',
+  'SA': 'Arab Saudi', 'SN': 'Senegal', 'RS': 'Serbia', 'SL': 'Sierra Leone',
+  'SG': 'Singapura', 'SK': 'Slovakia', 'SI': 'Slovenia', 'SO': 'Somalia',
+  'ZA': 'Afrika Selatan', 'ES': 'Spanyol', 'LK': 'Sri Lanka', 'SD': 'Sudan',
+  'SE': 'Swedia', 'CH': 'Swiss', 'SY': 'Suriah', 'TW': 'Taiwan',
+  'TJ': 'Tajikistan', 'TZ': 'Tanzania', 'TH': 'Thailand', 'TL': 'Timor Leste',
+  'TG': 'Togo', 'TN': 'Tunisia', 'TR': 'Turki', 'TM': 'Turkmenistan',
+  'UG': 'Uganda', 'UA': 'Ukraina', 'AE': 'Uni Emirat', 'GB': 'Inggris',
+  'US': 'Amerika', 'UY': 'Uruguay', 'UZ': 'Uzbekistan', 'VE': 'Venezuela',
+  'VN': 'Vietnam', 'YE': 'Yaman', 'ZM': 'Zambia', 'ZW': 'Zimbabwe',
+};
+
+String _countryName(String code) => _countryNames[code.toUpperCase()] ?? code;
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -61,7 +112,6 @@ class _PackagesScreenState extends State<PackagesScreen> {
   /// Kelompokkan per kuota GB, urutan sesuai _gbOrder lalu Unlimited
   Map<String, List<EsimPackage>> _group(List<EsimPackage> pkgs) {
     final result = <String, List<EsimPackage>>{};
-    // Fixed: urutkan group GB sesuai _gbOrder
     for (final gb in _gbOrder) {
       final items = pkgs
           .where((p) => !p.unlimited && p.dataGb == gb)
@@ -69,7 +119,6 @@ class _PackagesScreenState extends State<PackagesScreen> {
         ..sort((a, b) => a.durationDays.compareTo(b.durationDays));
       if (items.isNotEmpty) result['${gb.toInt()} GB'] = items;
     }
-    // Unlimited
     final unl = pkgs.where((p) => p.unlimited).toList()
       ..sort((a, b) => a.durationDays.compareTo(b.durationDays));
     if (unl.isNotEmpty) result['Unlimited'] = unl;
@@ -87,15 +136,22 @@ class _PackagesScreenState extends State<PackagesScreen> {
   Widget build(BuildContext context) {
     final provider    = context.watch<PackagesProvider>();
     final singlePkgs  = provider.packages;
-    final regionalPkgs = provider.bundles;
+    final bundles     = provider.bundles;
 
-    final displayPkgs = _coverage == 'regional' ? regionalPkgs : singlePkgs;
-    final isLoading   = _coverage == 'regional' ? provider.loadingBundles : provider.loading;
-    final hasError    = _coverage == 'regional' ? provider.bundlesError != null : provider.error != null;
-    final errorMsg    = _coverage == 'regional' ? (provider.bundlesError ?? '') : (provider.error ?? '');
+    final isLoading = _coverage == 'regional' ? provider.loadingBundles : provider.loading;
+    final hasError  = _coverage == 'regional' ? provider.bundlesError != null : provider.error != null;
+    final errorMsg  = _coverage == 'regional' ? (provider.bundlesError ?? '') : (provider.error ?? '');
 
-    final filtered = _filtered(displayPkgs);
-    final grouped  = _group(filtered);
+    // For single coverage
+    final filtered = _coverage == 'single' ? _filtered(singlePkgs) : <EsimPackage>[];
+    final grouped  = _coverage == 'single' ? _group(filtered) : <String, List<EsimPackage>>{};
+
+    // Paket count badge for header (single coverage only)
+    final headerBadgeText = _coverage == 'single' && !isLoading && !hasError
+        ? '${filtered.length} paket'
+        : _coverage == 'regional' && !isLoading && !hasError
+            ? '${bundles.length} area'
+            : null;
 
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
@@ -130,14 +186,14 @@ class _PackagesScreenState extends State<PackagesScreen> {
                         style: const TextStyle(color: Colors.white, fontSize: 16,
                             fontWeight: FontWeight.bold)),
                   ),
-                  if (!isLoading && !hasError)
+                  if (headerBadgeText != null)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text('${filtered.length} paket',
+                      child: Text(headerBadgeText,
                           style: const TextStyle(color: Colors.white, fontSize: 11,
                               fontWeight: FontWeight.w600)),
                     ),
@@ -154,7 +210,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
                   ),
                   _TabOpt(
                     label: 'Multi Negara',
-                    count: provider.loadingBundles ? null : _count('all', regionalPkgs),
+                    count: provider.loadingBundles ? null : bundles.length,
                     active: _coverage == 'regional',
                     onTap: () => setState(() { _coverage = 'regional'; _typeFilter = 'all'; }),
                   ),
@@ -189,27 +245,347 @@ class _PackagesScreenState extends State<PackagesScreen> {
                 : hasError
                     ? _ErrorState(message: errorMsg,
                         onRetry: () => provider.fetchPackages(widget.countryCode))
-                    : filtered.isEmpty
-                        ? const _EmptyState()
-                        : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
-                            itemCount: grouped.length,
-                            itemBuilder: (_, i) {
-                              final label  = grouped.keys.elementAt(i);
-                              final items  = grouped[label]!;
-                              final isUnl  = label == 'Unlimited';
-                              return _GroupSection(
-                                label: label,
-                                isUnlimited: isUnl,
-                                items: items,
+                    : _coverage == 'regional'
+                        ? bundles.isEmpty
+                            ? const _EmptyState()
+                            : _BundleListView(
+                                bundles: bundles,
                                 idr: _idr,
                                 countryName: widget.countryName,
-                              );
-                            },
-                          ),
+                              )
+                        : filtered.isEmpty
+                            ? const _EmptyState()
+                            : ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
+                                itemCount: grouped.length,
+                                itemBuilder: (_, i) {
+                                  final label  = grouped.keys.elementAt(i);
+                                  final items  = grouped[label]!;
+                                  final isUnl  = label == 'Unlimited';
+                                  return _GroupSection(
+                                    label: label,
+                                    isUnlimited: isUnl,
+                                    items: items,
+                                    idr: _idr,
+                                    countryName: widget.countryName,
+                                  );
+                                },
+                              ),
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Bundle list view ──────────────────────────────────────────────────────────
+
+class _BundleListView extends StatelessWidget {
+  final List<Bundle> bundles;
+  final NumberFormat idr;
+  final String countryName;
+
+  const _BundleListView({
+    required this.bundles,
+    required this.idr,
+    required this.countryName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
+      itemCount: bundles.length,
+      itemBuilder: (_, i) => _BundleCard(
+        bundle: bundles[i],
+        idr: idr,
+        countryName: countryName,
+      ),
+    );
+  }
+}
+
+// ── Bundle card (expandable) ──────────────────────────────────────────────────
+
+class _BundleCard extends StatefulWidget {
+  final Bundle bundle;
+  final NumberFormat idr;
+  final String countryName;
+
+  const _BundleCard({
+    required this.bundle,
+    required this.idr,
+    required this.countryName,
+  });
+
+  @override
+  State<_BundleCard> createState() => _BundleCardState();
+}
+
+class _BundleCardState extends State<_BundleCard> {
+  bool _expanded = false;
+
+  String get _flagsLine {
+    return widget.bundle.countryCodes
+        .map((c) => _flagEmoji(c))
+        .join(' ');
+  }
+
+  String get _countriesLine {
+    final names = widget.bundle.countryCodes.map(_countryName).toList();
+    if (names.length <= 3) return names.join(' · ');
+    return '${names.take(3).join(' · ')} +${names.length - 3}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bundle = widget.bundle;
+    final pkgCount = bundle.packages.length;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Header (tappable) ──
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.vertical(
+              top: const Radius.circular(14),
+              bottom: _expanded ? Radius.zero : const Radius.circular(14),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+              child: Row(
+                children: [
+                  // Flag emojis besar
+                  Text(_flagsLine, style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 10),
+
+                  // Nama + negara
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _countriesLine,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Row(children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${bundle.countryCount} Negara',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$pkgCount paket tersedia',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textGrey,
+                            ),
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+
+                  // Chevron
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(Icons.keyboard_arrow_down,
+                        color: AppTheme.textGrey, size: 22),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Expanded: package list ──
+          if (_expanded) ...[
+            const Divider(height: 1, color: Color(0xFFF0EDE0)),
+            ...bundle.packages.asMap().entries.map((e) {
+              final idx = e.key;
+              final pkg = e.value;
+              final isLast = idx == bundle.packages.length - 1;
+              return _BundlePackageRow(
+                pkg: pkg,
+                idr: widget.idr,
+                isLast: isLast,
+                countryName: widget.countryName,
+              );
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Package row inside a bundle ───────────────────────────────────────────────
+
+class _BundlePackageRow extends StatelessWidget {
+  final EsimPackage pkg;
+  final NumberFormat idr;
+  final bool isLast;
+  final String countryName;
+
+  const _BundlePackageRow({
+    required this.pkg,
+    required this.idr,
+    required this.isLast,
+    required this.countryName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final supplierColor = _supplierColor(pkg.supplier);
+
+    return Column(
+      children: [
+        InkWell(
+          onTap: () => context.push('/package-detail', extra: {
+            'package': pkg,
+            'countryName': countryName,
+          }),
+          borderRadius: BorderRadius.only(
+            bottomLeft:  isLast ? const Radius.circular(14) : Radius.zero,
+            bottomRight: isLast ? const Radius.circular(14) : Radius.zero,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+            child: Row(
+              children: [
+                // Kiri: data size + durasi + tags
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Data + durasi
+                      Row(children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: pkg.unlimited ? AppTheme.cta.withOpacity(0.12) : AppTheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            pkg.unlimited ? 'Unlimited' : '${pkg.dataGb % 1 == 0 ? pkg.dataGb.toInt() : pkg.dataGb} GB',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: pkg.unlimited ? AppTheme.cta : AppTheme.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          pkg.durationLabel,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                      ]),
+                      const SizedBox(height: 5),
+                      // Tags
+                      Wrap(
+                        spacing: 5,
+                        runSpacing: 4,
+                        children: [
+                          _SmallTag(
+                            icon: Icons.signal_cellular_alt,
+                            label: pkg.speed,
+                            color: supplierColor,
+                          ),
+                          if (pkg.hotspot)
+                            const _SmallTag(
+                              icon: Icons.wifi_tethering,
+                              label: 'Hotspot',
+                              color: Color(0xFF0891B2),
+                            ),
+                          if (pkg.unlimited && pkg.dailyQuotaGb > 0)
+                            _SmallTag(
+                              icon: Icons.all_inclusive,
+                              label: '${pkg.dailyQuotaGb % 1 == 0 ? pkg.dailyQuotaGb.toInt() : pkg.dailyQuotaGb}GB/hari',
+                              color: AppTheme.cta,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Kanan: harga + tombol beli
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      idr.format(pkg.priceIdr),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      height: 30,
+                      child: ElevatedButton(
+                        onPressed: () => context.push('/checkout', extra: {
+                          'package': pkg,
+                          'countryName': countryName,
+                        }),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.cta,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          minimumSize: Size.zero,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Beli',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (!isLast)
+          const Divider(height: 1, indent: 14, endIndent: 14, color: Color(0xFFF5F0E8)),
+      ],
     );
   }
 }
@@ -236,7 +612,6 @@ class _GroupSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Badge header GB
         Padding(
           padding: const EdgeInsets.only(bottom: 8, top: 4),
           child: Container(
@@ -263,8 +638,6 @@ class _GroupSection extends StatelessWidget {
             ),
           ),
         ),
-
-        // Card putih berisi semua durasi untuk kuota ini
         Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
@@ -333,12 +706,10 @@ class _DurationRow extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Row(
               children: [
-                // Kiri: durasi + tags
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Durasi — besar dan bold
                       Text(
                         pkg.durationLabel,
                         style: const TextStyle(
@@ -348,7 +719,6 @@ class _DurationRow extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      // Tags: speed + hotspot + daily quota
                       Wrap(
                         spacing: 5,
                         runSpacing: 4,
@@ -381,8 +751,6 @@ class _DurationRow extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // Kanan: harga + tombol beli
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
