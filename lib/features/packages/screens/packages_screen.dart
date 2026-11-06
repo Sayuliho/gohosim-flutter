@@ -349,22 +349,24 @@ class _BundleListView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              // Flag + nama tiap negara
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              // Flag + nama tiap negara (wrap supaya tidak overflow)
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
                 children: codes.asMap().entries.map((e) {
                   final i = e.key;
                   final code = e.value;
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (i > 0) ...[
-                        const SizedBox(width: 10),
-                        const Text('·', style: TextStyle(color: Colors.white54)),
-                        const SizedBox(width: 10),
-                      ],
-                      Text(_flagEmoji(code), style: const TextStyle(fontSize: 18)),
-                      const SizedBox(width: 5),
+                      if (i > 0)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8),
+                          child: Text('·', style: TextStyle(color: Colors.white54)),
+                        ),
+                      Text(_flagEmoji(code), style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 4),
                       Text(
                         _countryName(code),
                         style: const TextStyle(
