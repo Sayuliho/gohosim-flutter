@@ -59,7 +59,7 @@ class EsimPackage {
     }
 
     return EsimPackage(
-      packageCode: j['package_code'] ?? j['packageCode'] ?? '',
+      packageCode: j['package_code'] ?? j['packageCode'] ?? j['code'] ?? j['slug'] ?? '',
       supplier: j['supplier'] ?? 'ea',
       name: j['name'] ?? '',
       locationCode: locCode,
