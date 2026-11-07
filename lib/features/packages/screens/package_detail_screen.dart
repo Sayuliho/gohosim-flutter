@@ -333,12 +333,11 @@ class _Section extends StatelessWidget {
             ),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
-          ...children.expand((child) sync* {
-            yield child;
-            if (child != children.last) {
-              yield const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF5F5F5));
-            }
-          }),
+          for (int i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i < children.length - 1)
+              const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF0F0F0)),
+          ],
           const SizedBox(height: 8),
         ],
       ),
@@ -363,51 +362,46 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (multiLine) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Kolom kiri: icon + label, lebar tetap
+          SizedBox(
+            width: 140,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, size: 15, color: AppTheme.textGrey),
-                const SizedBox(width: 8),
-                Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 12, fontWeight: FontWeight.w500)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(icon, size: 14, color: AppTheme.textGrey),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppTheme.textGrey,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 5),
-            Padding(
-              padding: const EdgeInsets.only(left: 23),
-              child: Text(
-                value,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor ?? AppTheme.textDark,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          Icon(icon, size: 15, color: AppTheme.textGrey),
-          const SizedBox(width: 8),
-          Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 12, fontWeight: FontWeight.w500)),
-          const Spacer(),
-          Flexible(
+          ),
+          // Kolom kanan: nilai, bisa wrap
+          Expanded(
             child: Text(
               value,
-              textAlign: TextAlign.right,
+              textAlign: multiLine ? TextAlign.left : TextAlign.right,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: valueColor ?? AppTheme.textDark,
+                height: 1.4,
               ),
             ),
           ),
