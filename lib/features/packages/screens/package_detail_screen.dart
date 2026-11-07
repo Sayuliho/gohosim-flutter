@@ -333,8 +333,13 @@ class _Section extends StatelessWidget {
             ),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
-          ...children,
-          const SizedBox(height: 6),
+          ...children.expand((child) sync* {
+            yield child;
+            if (child != children.last) {
+              yield const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF5F5F5));
+            }
+          }),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -360,20 +365,20 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (multiLine) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, size: 16, color: AppTheme.textGrey),
-                const SizedBox(width: 10),
-                Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 13, fontWeight: FontWeight.w600)),
+                Icon(icon, size: 15, color: AppTheme.textGrey),
+                const SizedBox(width: 8),
+                Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 12, fontWeight: FontWeight.w500)),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Padding(
-              padding: const EdgeInsets.only(left: 26),
+              padding: const EdgeInsets.only(left: 23),
               child: Text(
                 value,
                 style: TextStyle(
@@ -388,12 +393,12 @@ class _InfoRow extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppTheme.textGrey),
-          const SizedBox(width: 10),
-          Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 13, fontWeight: FontWeight.w600)),
+          Icon(icon, size: 15, color: AppTheme.textGrey),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 12, fontWeight: FontWeight.w500)),
           const Spacer(),
           Flexible(
             child: Text(
