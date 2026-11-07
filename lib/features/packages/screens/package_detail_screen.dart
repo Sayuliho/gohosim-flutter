@@ -6,12 +6,12 @@ import '../../../shared/theme/app_theme.dart';
 
 // Terjemahan activation type ke bahasa Indonesia
 String _translateActivation(String raw) {
-  final lower = raw.toLowerCase();
-  if (lower.contains('first network') || lower.contains('first use')) {
+  final lower = raw.toLowerCase().trim();
+  if (lower == 'auto' || lower.contains('first network') || lower.contains('first use') || lower.contains('automatic')) {
     return 'Otomatis (aktif saat pertama konek)';
   }
-  if (lower.contains('manual') || lower.contains('manual activation')) {
-    return 'Manual (aktifkan sendiri)';
+  if (lower == 'manual' || lower.contains('manual activation')) {
+    return 'Manual (aktifkan sendiri via Setting HP)';
   }
   if (lower.contains('immediate') || lower.contains('instant')) {
     return 'Langsung aktif setelah instalasi';

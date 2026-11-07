@@ -563,6 +563,12 @@ class _DurationRow extends StatelessWidget {
                               label: '${pkg.supportedCountries.length} negara',
                               color: const Color(0xFF7C3AED),
                             ),
+                          if (pkg.topup)
+                            const _SmallTag(
+                              icon: Icons.refresh,
+                              label: 'Top Up',
+                              color: Color(0xFF059669),
+                            ),
                         ],
                       ),
                     ],
