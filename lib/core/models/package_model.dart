@@ -19,8 +19,12 @@ class EsimPackage {
   final String fup;           // Fair Use Policy info (opsional)
   final bool topup;           // bisa diisi ulang / top-up
   final List<String> operators; // jaringan/operator yg didukung
-  final String activationType;  // e.g. "First Network Connection"
+  final String activationType;  // e.g. "auto" / "manual"
   final int shelfDays;          // masa aktif sebelum dipakai (hari)
+  final String description;     // deskripsi/remark paket dari supplier
+  final String apn;             // APN setting (untuk eSIM Access)
+  final String breakoutIp;      // asal IP / negara breakout (eSIM Access)
+  final int throttleKbps;       // kecepatan setelah FUP (Kbps)
 
   EsimPackage({
     required this.packageCode,
@@ -45,6 +49,10 @@ class EsimPackage {
     this.operators = const [],
     this.activationType = '',
     this.shelfDays = 0,
+    this.description = '',
+    this.apn = '',
+    this.breakoutIp = '',
+    this.throttleKbps = 0,
   });
 
   factory EsimPackage.fromJson(Map<String, dynamic> j) {
@@ -89,6 +97,10 @@ class EsimPackage {
       operators: (j['operators'] as List?)?.map((e) => e.toString()).toList() ?? [],
       activationType: (j['activation_type'] ?? j['activationType'] ?? '') as String,
       shelfDays: (j['shelf_days'] ?? j['shelfDays'] ?? j['validity_days'] ?? 0) as int,
+      description: (j['description'] ?? '') as String,
+      apn: (j['apn'] ?? '') as String,
+      breakoutIp: (j['breakout_ip'] ?? j['breakoutIp'] ?? '') as String,
+      throttleKbps: ((j['throttle_kbps'] ?? j['throttleKbps'] ?? 0) as num).toInt(),
     );
   }
 
