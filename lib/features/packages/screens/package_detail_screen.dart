@@ -258,6 +258,13 @@ class PackageDetailScreen extends StatelessWidget {
                     value: '${pkg.shelfDays} hari sejak pembelian',
                     multiLine: true,
                   ),
+                if (pkg.description.isNotEmpty)
+                  _InfoRow(
+                    icon: Icons.info_outline,
+                    label: 'Info Paket',
+                    value: pkg.description,
+                    multiLine: true,
+                  ),
                 if (pkg.apn.isNotEmpty)
                   _InfoRow(
                     icon: Icons.settings_ethernet,
@@ -551,12 +558,10 @@ class _UnlimitedInfoCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              pkg.description.isNotEmpty
-                  ? pkg.description
-                  : 'Setiap hari kamu mendapat $gb kecepatan $speed penuh. '
-                    'Setelah $gb habis, internet tetap jalan tapi lebih lambat '
-                    '(untuk chat & maps masih oke). '
-                    'Kuota reset otomatis tiap tengah malam waktu setempat.',
+              'Setiap hari kamu mendapat $gb kecepatan $speed penuh. '
+              'Setelah $gb habis, internet tetap jalan tapi lebih lambat '
+              '(untuk chat & maps masih oke). '
+              'Kuota reset otomatis tiap tengah malam waktu setempat.',
               style: const TextStyle(
                 color: Color(0xFF94A3B8),
                 fontSize: 12,
