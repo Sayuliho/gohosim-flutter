@@ -22,6 +22,14 @@ String _translateActivation(String raw) {
   return raw; // fallback tampilkan apa adanya
 }
 
+// Persingkat info FUP untuk ditampilkan inline
+String _shortenFup(String fup) {
+  final match = RegExp(r'(\d+)\s*[Kk][Bb]ps').firstMatch(fup);
+  if (match != null) return 'turun ke ${match.group(1)} Kbps setelah FUP';
+  if (fup.length > 50) return '${fup.substring(0, 47)}...';
+  return fup;
+}
+
 // Warna supplier (sama dengan packages_screen)
 Color _supplierColor(String supplier) {
   switch (supplier) {
@@ -172,8 +180,11 @@ class PackageDetailScreen extends StatelessWidget {
                 _InfoRow(
                   icon: Icons.signal_cellular_alt,
                   label: 'Kecepatan',
-                  value: pkg.speed,
+                  value: pkg.fup.isNotEmpty
+                      ? '${pkg.speed}\n(${_shortenFup(pkg.fup)})'
+                      : pkg.speed,
                   valueColor: supplierColor,
+                  multiLine: pkg.fup.isNotEmpty,
                 ),
                 _InfoRow(
                   icon: Icons.wifi_tethering,
@@ -227,7 +238,17 @@ class PackageDetailScreen extends StatelessWidget {
                   label: 'Tipe Aktivasi',
                   value: pkg.activationType.isNotEmpty
                       ? '⚡ ${_translateActivation(pkg.activationType)}'
-                      : '⚡ Otomatis (aktif saat pertama konek)',
+                      : (pkg.supplier == 'ir' || pkg.supplier == 'ec')
+                          ? '📋 Lihat panduan aktivasi'
+                          : '⚡ Otomatis (aktif saat pertama konek)',
+                  multiLine: true,
+                ),
+                _InfoRow(
+                  icon: Icons.map_outlined,
+                  label: 'Cakupan',
+                  value: pkg.isRegional
+                      ? '🌏 Multi negara'
+                      : '📍 Satu negara\n${pkg.locationCode.toLowerCase()}',
                   multiLine: true,
                 ),
                 if (pkg.shelfDays > 0)
@@ -277,6 +298,47 @@ class PackageDetailScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ],
+
+            // ── Info Paket (shelf days warning) ──
+            if (pkg.shelfDays > 0) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 1))],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline, size: 16, color: Color(0xFFD97706)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Jika eSIM tidak diaktifkan dalam ${pkg.shelfDays} hari sejak pembelian, '
+                          'paket akan otomatis aktif dan masa berlaku mulai berjalan.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF92400E),
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            // ── Kartu deskripsi paket unlimited ──
+            if (pkg.unlimited && pkg.dailyQuotaGb > 0) ...[
+              const SizedBox(height: 12),
+              _UnlimitedInfoCard(pkg: pkg),
             ],
 
             const SizedBox(height: 12),
@@ -406,6 +468,110 @@ class _InfoRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _UnlimitedInfoCard extends StatelessWidget {
+  final EsimPackage pkg;
+  const _UnlimitedInfoCard({required this.pkg});
+
+  @override
+  Widget build(BuildContext context) {
+    final gb = pkg.dailyQuotaGb % 1 == 0
+        ? '${pkg.dailyQuotaGb.toInt()}GB'
+        : '${pkg.dailyQuotaGb}GB';
+    final speed = pkg.speed;
+
+    // Use-case bullets berdasarkan kuota harian
+    final List<Map<String, String>> bullets;
+    if (pkg.dailyQuotaGb <= 1) {
+      bullets = [
+        {'icon': '✅', 'text': 'WhatsApp, Maps, browsing'},
+        {'icon': '✅', 'text': 'Foto & video pendek'},
+        {'icon': '⚠️', 'text': 'Streaming HD – sebaiknya gunakan di awal hari'},
+      ];
+    } else if (pkg.dailyQuotaGb <= 3) {
+      bullets = [
+        {'icon': '✅', 'text': 'WhatsApp, Maps, browsing'},
+        {'icon': '✅', 'text': 'Video call & streaming SD'},
+        {'icon': '✅', 'text': 'Upload foto & media sosial'},
+        {'icon': '⚠️', 'text': 'Streaming HD – bisa tapi hemat'},
+      ];
+    } else {
+      bullets = [
+        {'icon': '✅', 'text': 'Semua aktivitas standar'},
+        {'icon': '✅', 'text': 'Streaming HD lancar'},
+        {'icon': '✅', 'text': 'Video call berkualitas tinggi'},
+        {'icon': '✅', 'text': 'Upload & download media'},
+      ];
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.signal_wifi_4_bar, size: 16, color: Color(0xFF38BDF8)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Internet Unlimited · $gb/hari kecepatan penuh',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Setiap hari kamu mendapat $gb kecepatan $speed penuh. '
+              'Setelah $gb habis, internet tetap jalan tapi lebih lambat '
+              '(untuk chat & maps masih oke). '
+              'Kuota reset otomatis tiap tengah malam waktu setempat.',
+              style: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...bullets.map((b) => Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(b['icon']!, style: const TextStyle(fontSize: 13)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      b['text']!,
+                      style: const TextStyle(
+                        color: Color(0xFFCBD5E1),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )),
+          ],
+        ),
       ),
     );
   }
