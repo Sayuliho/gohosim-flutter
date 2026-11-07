@@ -17,6 +17,10 @@ class EsimPackage {
   final List<String> supportedCountries; // ISO codes untuk regional bundles
   final bool isHidden;        // paket admin-only, tidak ditampilkan ke customer
   final String fup;           // Fair Use Policy info (opsional)
+  final bool topup;           // bisa diisi ulang / top-up
+  final List<String> operators; // jaringan/operator yg didukung
+  final String activationType;  // e.g. "First Network Connection"
+  final int shelfDays;          // masa aktif sebelum dipakai (hari)
 
   EsimPackage({
     required this.packageCode,
@@ -37,6 +41,10 @@ class EsimPackage {
     this.supportedCountries = const [],
     this.isHidden = false,
     this.fup = '',
+    this.topup = false,
+    this.operators = const [],
+    this.activationType = '',
+    this.shelfDays = 0,
   });
 
   factory EsimPackage.fromJson(Map<String, dynamic> j) {
@@ -77,6 +85,10 @@ class EsimPackage {
       supportedCountries: countries,
       isHidden: j['is_hidden'] == true || j['isHidden'] == true,
       fup: (j['fup'] ?? '') as String,
+      topup: j['topup'] == true || j['can_renew'] == true,
+      operators: (j['operators'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      activationType: (j['activation_type'] ?? j['activationType'] ?? '') as String,
+      shelfDays: (j['shelf_days'] ?? j['shelfDays'] ?? j['validity_days'] ?? 0) as int,
     );
   }
 

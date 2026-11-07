@@ -4,6 +4,24 @@ import 'package:intl/intl.dart';
 import '../../../core/models/package_model.dart';
 import '../../../shared/theme/app_theme.dart';
 
+// Terjemahan activation type ke bahasa Indonesia
+String _translateActivation(String raw) {
+  final lower = raw.toLowerCase();
+  if (lower.contains('first network') || lower.contains('first use')) {
+    return 'Otomatis (aktif saat pertama konek)';
+  }
+  if (lower.contains('manual') || lower.contains('manual activation')) {
+    return 'Manual (aktifkan sendiri)';
+  }
+  if (lower.contains('immediate') || lower.contains('instant')) {
+    return 'Langsung aktif setelah instalasi';
+  }
+  if (lower.contains('purchase') || lower.contains('order')) {
+    return 'Aktif sejak pembelian';
+  }
+  return raw; // fallback tampilkan apa adanya
+}
+
 // Warna supplier (sama dengan packages_screen)
 Color _supplierColor(String supplier) {
   switch (supplier) {
@@ -191,10 +209,38 @@ class PackageDetailScreen extends StatelessWidget {
             _Section(
               title: 'Jaringan & Aktivasi',
               children: [
-                const _InfoRow(
-                  icon: Icons.public_outlined,
-                  label: 'Aktivasi',
-                  value: 'Otomatis via QR Code',
+                if (pkg.operators.isNotEmpty)
+                  _InfoRow(
+                    icon: Icons.cell_tower_outlined,
+                    label: 'Jaringan / Operator',
+                    value: pkg.operators.join(', '),
+                    multiLine: true,
+                  ),
+                _InfoRow(
+                  icon: Icons.sim_card_outlined,
+                  label: 'Tipe SIM',
+                  value: '📍 Local SIM — IP lokal negara tujuan',
+                  multiLine: true,
+                ),
+                _InfoRow(
+                  icon: Icons.flash_on_outlined,
+                  label: 'Tipe Aktivasi',
+                  value: pkg.activationType.isNotEmpty
+                      ? '⚡ ${_translateActivation(pkg.activationType)}'
+                      : '⚡ Otomatis (aktif saat pertama konek)',
+                  multiLine: true,
+                ),
+                if (pkg.shelfDays > 0)
+                  _InfoRow(
+                    icon: Icons.hourglass_top_outlined,
+                    label: 'Masa Aktif Sebelum Dipakai',
+                    value: '${pkg.shelfDays} hari sejak pembelian',
+                    multiLine: true,
+                  ),
+                _InfoRow(
+                  icon: Icons.refresh_outlined,
+                  label: 'Top Up',
+                  value: pkg.topup ? '✅ Bisa diisi ulang' : '❌ Tidak bisa top up',
                 ),
                 const _InfoRow(
                   icon: Icons.phone_android_outlined,
@@ -300,16 +346,47 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final Color? valueColor;
+  final bool multiLine;
 
   const _InfoRow({
     required this.icon,
     required this.label,
     required this.value,
     this.valueColor,
+    this.multiLine = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (multiLine) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: AppTheme.textGrey),
+                const SizedBox(width: 10),
+                Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 13, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 26),
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: valueColor ?? AppTheme.textDark,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       child: Row(
@@ -318,12 +395,15 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: 10),
           Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 13, fontWeight: FontWeight.w600)),
           const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: valueColor ?? AppTheme.textDark,
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: valueColor ?? AppTheme.textDark,
+              ),
             ),
           ),
         ],
